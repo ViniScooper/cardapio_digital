@@ -10,10 +10,18 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html, body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+}
+
+.menu-section, .hh-section {
+  scroll-margin-top: 140px;
 }
 
 body {
@@ -26,6 +34,167 @@ body {
 a {
   text-decoration: none;
   color: inherit;
+}
+
+.cat-nav-item:hover {
+  background: #e8b84b !important;
+  color: #111 !important;
+  border-color: #e8b84b !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(232, 184, 75, 0.2);
+}
+
+.cat-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+.cat-nav-bar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── BOTÃO E DRAWER DE CATEGORIAS NO DESKTOP ── */
+.cat-desktop-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: fixed;
+  bottom: 25px;
+  left: 25px;
+  z-index: 99;
+  background: #111111;
+  color: #e8b84b;
+  border: 2px solid #e8b84b;
+  padding: 0.8rem 1.4rem;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+  transition: all 0.25s ease;
+}
+
+.cat-desktop-btn:hover {
+  background: #e8b84b;
+  color: #111111;
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 30px rgba(232,184,75,0.4);
+}
+
+.cat-desktop-icon {
+  font-size: 1.2rem;
+}
+
+/* No desktop (acima de 850px), oculta a barra horizontal de chips */
+@media (min-width: 851px) {
+  .cat-nav-bar {
+    display: none !important;
+  }
+}
+
+/* No mobile (menor ou igual a 850px), o botão flutuante fica mais compacto e ergonômico */
+@media (max-width: 850px) {
+  .cat-desktop-btn {
+    bottom: 20px !important;
+    left: 16px !important;
+    padding: 0.65rem 1.1rem !important;
+    font-size: 0.88rem !important;
+  }
+}
+
+/* Drawer / Menu Lateral */
+.cat-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  animation: fadeIn 0.2s ease;
+}
+
+.cat-drawer-panel {
+  background: #ffffff;
+  width: 380px;
+  max-width: 90vw;
+  height: 100vh;
+  box-shadow: 10px 0 35px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  animation: slideInLeft 0.25s ease;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cat-drawer-header {
+  padding: 1.2rem 1.5rem;
+  background: #111111;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid #e8b84b;
+}
+
+.cat-drawer-close {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0.4rem;
+  transition: color 0.2s;
+}
+
+.cat-drawer-close:hover {
+  color: #e8b84b;
+}
+
+.cat-drawer-list {
+  padding: 1rem 1.2rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cat-drawer-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #faf8f5;
+  border: 1px solid #f0ebe3;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.cat-drawer-item:hover {
+  background: #fdf6e6;
+  border-color: #e8b84b;
+  transform: translateX(4px);
+}
+
+.cat-drawer-badge {
+  background: #eee;
+  color: #666;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+.cat-drawer-hh {
+  background: #fcf9f0;
+  border: 1.5px solid #e8b84b;
 }
 
 button, input, select, textarea {
@@ -342,4 +511,146 @@ img {
   .footer-container {
     padding: 2rem 1rem !important;
   }
+}
+
+/* ============================================================
+   CARRINHO DE COMPRAS & PEDIDO VIA WHATSAPP
+   ============================================================ */
+
+/* Barra Flutuante de Carrinho */
+.cart-floating-bar {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 999;
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  color: #ffffff;
+  padding: 0.85rem 1.4rem;
+  border-radius: 50px;
+  box-shadow: 0 8px 30px rgba(18, 140, 126, 0.45);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.25);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cart-floating-bar:hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 12px 35px rgba(18, 140, 126, 0.6);
+}
+
+.cart-floating-badge {
+  background: #ffffff;
+  color: #128c7e;
+  font-weight: 800;
+  font-size: 0.85rem;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 850px) {
+  .cart-floating-bar {
+    bottom: 20px;
+    right: 16px;
+    padding: 0.75rem 1.1rem;
+    font-size: 0.88rem;
+  }
+}
+
+/* Modal do Carrinho */
+.cart-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.cart-modal-box {
+  background: #ffffff;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  border-radius: 20px;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  animation: scaleUp 0.25s ease;
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.cart-modal-header {
+  background: #111111;
+  color: #ffffff;
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid #25d366;
+}
+
+.cart-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #f0ebe3;
+}
+
+.cart-qtd-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  background: #faf8f5;
+  color: #333;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.cart-qtd-btn:hover {
+  background: #e8b84b;
+  color: #111;
+}
+
+.btn-adicionar-prato {
+  background: #111111;
+  color: #e8b84b;
+  border: 1.5px solid #e8b84b;
+  padding: 0.45rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-adicionar-prato:hover {
+  background: #e8b84b;
+  color: #111111;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(232, 184, 75, 0.3);
 }

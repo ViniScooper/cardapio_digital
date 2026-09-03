@@ -38,8 +38,94 @@ export default function Home() {
         hh_inicio: "19:00",
         hh_fim: "22:00"
     });
-    const [loading,    setLoading]    = useState(true);
-    const [erro,       setErro]       = useState("");
+    const [loading,       setLoading]       = useState(true);
+    const [erro,          setErro]          = useState("");
+    const [menuCatAberto, setMenuCatAberto] = useState(false);
+
+    // ── ESTADO DO CARRINHO DE PEDIDOS VIA WHATSAPP ──
+    const [carrinho,      setCarrinho]      = useState(() => {
+        try {
+            const salvo = localStorage.getItem("carrinho_boteco");
+            return salvo ? JSON.parse(salvo) : [];
+        } catch {
+            return [];
+        }
+    });
+    const [modalCarrinho, setModalCarrinho] = useState(false);
+    const [tipoEntrega,   setTipoEntrega]   = useState("mesa"); // "mesa" ou "delivery"
+    const [dadosCliente,  setDadosCliente]  = useState({
+        nome: "",
+        mesa: "",
+        endereco: "",
+        pagamento: "Cartão (na mesa / entrega)",
+        observacao: ""
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem("carrinho_boteco", JSON.stringify(carrinho));
+        } catch (e) {}
+    }, [carrinho]);
+
+    const adicionarAoCarrinho = (prato) => {
+        setCarrinho(prev => {
+            const existe = prev.find(item => item.id === prato.id);
+            if (existe) {
+                return prev.map(item => item.id === prato.id ? { ...item, quantidade: item.quantidade + 1 } : item);
+            }
+            return [...prev, { ...prato, quantidade: 1 }];
+        });
+    };
+
+    const alterarQtd = (id, delta) => {
+        setCarrinho(prev => {
+            return prev.map(item => {
+                if (item.id === id) {
+                    const novaQtd = item.quantidade + delta;
+                    return novaQtd > 0 ? { ...item, quantidade: novaQtd } : null;
+                }
+                return item;
+            }).filter(Boolean);
+        });
+    };
+
+    const totalCarrinho = carrinho.reduce((acc, item) => acc + (parseFloat(item.preco) * item.quantidade), 0);
+    const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+
+    const enviarPedidoWhatsApp = (e) => {
+        e.preventDefault();
+        if (carrinho.length === 0) return;
+
+        const telBoteco = "5581982714421"; // Telefone do Boteco do Sivirino
+
+        let msg = `🍻 *NOVO PEDIDO — BOTECO DO SIVIRINO*\n`;
+        msg += `----------------------------------------\n`;
+        if (dadosCliente.nome) msg += `👤 *Cliente:* ${dadosCliente.nome}\n`;
+        if (tipoEntrega === "mesa") {
+            msg += `📍 *Mesa no Salão:* ${dadosCliente.mesa || "Não informada"}\n`;
+        } else {
+            msg += `🛵 *Entrega Delivery:*\n${dadosCliente.endereco || "Endereço a combinar"}\n`;
+        }
+        msg += `💳 *Forma de Pagamento:* ${dadosCliente.pagamento}\n`;
+        if (dadosCliente.observacao) {
+            msg += `📝 *Observação:* ${dadosCliente.observacao}\n`;
+        }
+        msg += `----------------------------------------\n`;
+        msg += `📋 *ITENS DO PEDIDO:*\n`;
+
+        carrinho.forEach(item => {
+            const subtotal = (parseFloat(item.preco) * item.quantidade).toFixed(2).replace(".", ",");
+            msg += `• ${item.quantidade}x ${item.nome} — R$ ${subtotal}\n`;
+        });
+
+        msg += `----------------------------------------\n`;
+        msg += `💰 *VALOR TOTAL:* R$ ${totalCarrinho.toFixed(2).replace(".", ",")}\n`;
+        msg += `----------------------------------------\n`;
+        msg += `_Pedido gerado automaticamente pelo cardápio digital._`;
+
+        const linkUrl = `https://wa.me/${telBoteco}?text=${encodeURIComponent(msg)}`;
+        window.open(linkUrl, "_blank");
+    };
 
     useEffect(() => {
         Promise.all([
@@ -116,6 +202,108 @@ export default function Home() {
 
             {!loading && !erro && (
                 <>
+                    {/* ── BOTÃO FLUTUANTE DE CATEGORIAS NO COMPUTADOR (HAMBURGUER DESKTOP) ── */}
+                    <button
+                        className="cat-desktop-btn"
+                        onClick={() => setMenuCatAberto(true)}
+                        title="Ver todas as categorias"
+                    >
+                        <span className="cat-desktop-icon">☰</span>
+                        <span>Categorias</span>
+                    </button>
+
+                    {/* ── MENU LATERAL / DRAWER DE CATEGORIAS NO COMPUTADOR ── */}
+                    {menuCatAberto && (
+                        <div className="cat-drawer-overlay" onClick={() => setMenuCatAberto(false)}>
+                            <div className="cat-drawer-panel" onClick={(e) => e.stopPropagation()}>
+                                <div className="cat-drawer-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                                        <span style={{ fontSize: "1.5rem" }}>📂</span>
+                                        <div>
+                                            <h3 style={{ margin: 0, fontSize: "1.15rem", fontFamily: "'Playfair Display', serif" }}>
+                                                Categorias do Cardápio
+                                            </h3>
+                                            <p style={{ margin: 0, fontSize: "0.75rem", color: "#888" }}>
+                                                Navegue direto para a seção que desejar
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        className="cat-drawer-close"
+                                        onClick={() => setMenuCatAberto(false)}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div className="cat-drawer-list">
+                                    {nomesCategoria.map((cat) => {
+                                        const idAlvo = `cat-${cat.toLowerCase().replace(/\s+/g, '-')}`;
+                                        return (
+                                            <a
+                                                key={cat}
+                                                href={`#${idAlvo}`}
+                                                className="cat-drawer-item"
+                                                onClick={() => setMenuCatAberto(false)}
+                                            >
+                                                <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                                                    <span style={{ fontSize: "1.3rem" }}>{getIconeCategoria(cat)}</span>
+                                                    <span style={{ fontWeight: "600", fontSize: "0.92rem", color: "#222" }}>{cat}</span>
+                                                </div>
+                                                <span style={{ color: "#bbb", fontSize: "1.1rem", fontWeight: "700" }}>›</span>
+                                            </a>
+                                        );
+                                    })}
+
+                                    {config.hh_ativo && happyHourPratos.length > 0 && (
+                                        <a
+                                            href="#happy-hour"
+                                            className="cat-drawer-item cat-drawer-hh"
+                                            onClick={() => setMenuCatAberto(false)}
+                                        >
+                                            <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                                                <span style={{ fontSize: "1.3rem" }}>⚡</span>
+                                                <span style={{ fontWeight: "700", fontSize: "0.92rem", color: "#b38210" }}>Happy Hour Especial</span>
+                                            </div>
+                                            <span style={{ color: "#e8b84b", fontSize: "1.1rem", fontWeight: "700" }}>›</span>
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── BARRA FIXA DE NAVEGAÇÃO RÁPIDA POR CATEGORIA (EXCLUSIVA MOBILE) ── */}
+                    <div className="cat-nav-bar" style={styles.catNavBar}>
+                        <div style={styles.catNavContainer}>
+                            {nomesCategoria.map((cat) => {
+                                const idAlvo = `cat-${cat.toLowerCase().replace(/\s+/g, '-')}`;
+                                return (
+                                    <a
+                                        key={cat}
+                                        href={`#${idAlvo}`}
+                                        className="cat-nav-item"
+                                        style={styles.catNavItem}
+                                    >
+                                        <span style={{ fontSize: "1.1rem" }}>{getIconeCategoria(cat)}</span>
+                                        <span>{cat}</span>
+                                    </a>
+                                );
+                            })}
+
+                            {config.hh_ativo && happyHourPratos.length > 0 && (
+                                <a
+                                    href="#happy-hour"
+                                    className="cat-nav-item"
+                                    style={{ ...styles.catNavItem, border: "1px solid #e8b84b", background: "rgba(232,184,75,0.1)", color: "#b38210" }}
+                                >
+                                    <span>⚡</span>
+                                    <span>Happy Hour</span>
+                                </a>
+                            )}
+                        </div>
+                    </div>
+
                     <div id="cardapio">
                         {/* ── SEÇÕES POR CATEGORIA ─────────────────────── */}
                         {nomesCategoria.map((cat) => {
@@ -129,7 +317,17 @@ export default function Home() {
                                         <div style={styles.sectionDivider} />
                                     </div>
                                     <div className="menu-grid" style={styles.grid}>
-                                        {pratosDaCat.map(p => <PratoCard key={p.id} prato={p} />)}
+                                        {pratosDaCat.map(p => {
+                                            const itemNoCarrinho = carrinho.find(c => c.id === p.id);
+                                            return (
+                                                <PratoCard
+                                                    key={p.id}
+                                                    prato={p}
+                                                    onAdicionar={adicionarAoCarrinho}
+                                                    qtdNoCarrinho={itemNoCarrinho?.quantidade || 0}
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 </section>
                             );
@@ -155,10 +353,240 @@ export default function Home() {
                                     <div style={{ ...styles.sectionDivider, background: "linear-gradient(90deg, #f0c040, #e8b84b)" }} />
                                 </div>
                                 <div className="hh-grid" style={styles.hhGrid}>
-                                    {happyHourPratos.map(p => <PratoCard key={p.id} prato={p} happyHour />)}
+                                    {happyHourPratos.map(p => {
+                                        const itemNoCarrinho = carrinho.find(c => c.id === p.id);
+                                        return (
+                                            <PratoCard
+                                                key={p.id}
+                                                prato={p}
+                                                happyHour
+                                                onAdicionar={adicionarAoCarrinho}
+                                                qtdNoCarrinho={itemNoCarrinho?.quantidade || 0}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </section>
+                    )}
+
+                    {/* ── BARRA FLUTUANTE DO CARRINHO (WHATSAPP) ── */}
+                    {totalItens > 0 && (
+                        <div
+                            className="cart-floating-bar"
+                            onClick={() => setModalCarrinho(true)}
+                            title="Ver pedido e enviar pelo WhatsApp"
+                        >
+                            <span className="cart-floating-badge">{totalItens}</span>
+                            <div style={{ display: "flex", flexDirection: "column", textAlign: "left", lineHeight: "1.1" }}>
+                                <span style={{ fontSize: "0.75rem", opacity: 0.9 }}>Ver Pedido</span>
+                                <strong style={{ fontSize: "0.95rem" }}>R$ {totalCarrinho.toFixed(2).replace(".", ",")}</strong>
+                            </div>
+                            <span style={{ fontSize: "1.3rem", marginLeft: "4px" }}>💬</span>
+                        </div>
+                    )}
+
+                    {/* ── MODAL DE FINALIZAÇÃO DE PEDIDO VIA WHATSAPP ── */}
+                    {modalCarrinho && (
+                        <div className="cart-modal-overlay" onClick={() => setModalCarrinho(false)}>
+                            <div className="cart-modal-box" onClick={(e) => e.stopPropagation()}>
+                                <div className="cart-modal-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                                        <span style={{ fontSize: "1.5rem" }}>🛒</span>
+                                        <div>
+                                            <h3 style={{ margin: 0, fontSize: "1.2rem", fontFamily: "'Playfair Display', serif" }}>
+                                                Seu Pedido
+                                            </h3>
+                                            <p style={{ margin: 0, fontSize: "0.75rem", color: "#25d366" }}>
+                                                Enviar direto para o WhatsApp do Boteco
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        style={{ background: "none", border: "none", color: "#aaa", fontSize: "1.3rem", cursor: "pointer" }}
+                                        onClick={() => setModalCarrinho(false)}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div style={{ padding: "1.2rem 1.5rem", flex: 1, overflowY: "auto" }}>
+                                    {/* Lista de itens no carrinho */}
+                                    <div style={{ marginBottom: "1.5rem" }}>
+                                        <h4 style={{ fontSize: "0.9rem", color: "#777", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.6rem" }}>
+                                            Itens Selecionados ({totalItens})
+                                        </h4>
+                                        {carrinho.map(item => (
+                                            <div key={item.id} className="cart-item-row">
+                                                <div style={{ flex: 1, paddingRight: "0.8rem" }}>
+                                                    <p style={{ margin: 0, fontWeight: "600", fontSize: "0.92rem" }}>{item.nome}</p>
+                                                    <p style={{ margin: 0, fontSize: "0.8rem", color: "#888" }}>
+                                                        R$ {parseFloat(item.preco).toFixed(2).replace(".", ",")} un.
+                                                    </p>
+                                                </div>
+
+                                                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                                                    <button type="button" className="cart-qtd-btn" onClick={() => alterarQtd(item.id, -1)}>-</button>
+                                                    <span style={{ fontWeight: "700", minWidth: "18px", textAlign: "center" }}>{item.quantidade}</span>
+                                                    <button type="button" className="cart-qtd-btn" onClick={() => alterarQtd(item.id, 1)}>+</button>
+                                                </div>
+
+                                                <span style={{ fontWeight: "700", marginLeft: "1rem", minWidth: "75px", textAlign: "right" }}>
+                                                    R$ {(parseFloat(item.preco) * item.quantidade).toFixed(2).replace(".", ",")}
+                                                </span>
+                                            </div>
+                                        ))}
+
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.8rem", borderTop: "2px dashed #eee" }}>
+                                            <span style={{ fontSize: "1.1rem", fontWeight: "700" }}>Total:</span>
+                                            <span style={{ fontSize: "1.3rem", fontWeight: "800", color: "#128c7e" }}>
+                                                R$ {totalCarrinho.toFixed(2).replace(".", ",")}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Formulário de Identificação do Cliente */}
+                                    <form onSubmit={enviarPedidoWhatsApp}>
+                                        <div style={{ marginBottom: "1rem" }}>
+                                            <label style={{ display: "block", fontSize: "0.82rem", fontWeight: "600", color: "#444", marginBottom: "0.4rem" }}>
+                                                Onde você está?
+                                            </label>
+                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setTipoEntrega("mesa")}
+                                                    style={{
+                                                        padding: "0.6rem",
+                                                        borderRadius: "10px",
+                                                        border: tipoEntrega === "mesa" ? "2px solid #25d366" : "1px solid #ddd",
+                                                        background: tipoEntrega === "mesa" ? "#f0fdf4" : "#fafafa",
+                                                        fontWeight: "700",
+                                                        color: tipoEntrega === "mesa" ? "#166534" : "#666",
+                                                        cursor: "pointer",
+                                                        fontSize: "0.85rem"
+                                                    }}
+                                                >
+                                                    🍻 No Salão / Mesa
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setTipoEntrega("delivery")}
+                                                    style={{
+                                                        padding: "0.6rem",
+                                                        borderRadius: "10px",
+                                                        border: tipoEntrega === "delivery" ? "2px solid #25d366" : "1px solid #ddd",
+                                                        background: tipoEntrega === "delivery" ? "#f0fdf4" : "#fafafa",
+                                                        fontWeight: "700",
+                                                        color: tipoEntrega === "delivery" ? "#166534" : "#666",
+                                                        cursor: "pointer",
+                                                        fontSize: "0.85rem"
+                                                    }}
+                                                >
+                                                    🛵 Delivery / Entrega
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem", marginBottom: "0.8rem" }}>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
+                                                    Seu Nome *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    placeholder="Ex: Carlos"
+                                                    value={dadosCliente.nome}
+                                                    onChange={(e) => setDadosCliente(d => ({ ...d, nome: e.target.value }))}
+                                                    style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem" }}
+                                                />
+                                            </div>
+
+                                            {tipoEntrega === "mesa" ? (
+                                                <div>
+                                                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
+                                                        Nº da Mesa *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="Ex: Mesa 04"
+                                                        value={dadosCliente.mesa}
+                                                        onChange={(e) => setDadosCliente(d => ({ ...d, mesa: e.target.value }))}
+                                                        style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem" }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
+                                                        Endereço de Entrega *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="Rua, número e bairro"
+                                                        value={dadosCliente.endereco}
+                                                        onChange={(e) => setDadosCliente(d => ({ ...d, endereco: e.target.value }))}
+                                                        style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem" }}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div style={{ marginBottom: "0.8rem" }}>
+                                            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
+                                                Forma de Pagamento
+                                            </label>
+                                            <select
+                                                value={dadosCliente.pagamento}
+                                                onChange={(e) => setDadosCliente(d => ({ ...d, pagamento: e.target.value }))}
+                                                style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem", background: "#fff" }}
+                                            >
+                                                <option value="Cartão de Crédito / Débito">Cartão de Crédito / Débito</option>
+                                                <option value="PIX">PIX</option>
+                                                <option value="Dinheiro">Dinheiro</option>
+                                            </select>
+                                        </div>
+
+                                        <div style={{ marginBottom: "1.2rem" }}>
+                                            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
+                                                Observações (sem cebola, gelo e limão, etc.)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Opcional"
+                                                value={dadosCliente.observacao}
+                                                onChange={(e) => setDadosCliente(d => ({ ...d, observacao: e.target.value }))}
+                                                style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem" }}
+                                            />
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            style={{
+                                                width: "100%",
+                                                background: "#25d366",
+                                                color: "#ffffff",
+                                                border: "none",
+                                                padding: "0.95rem",
+                                                borderRadius: "50px",
+                                                fontWeight: "800",
+                                                fontSize: "1.05rem",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "8px",
+                                                boxShadow: "0 6px 20px rgba(37, 211, 102, 0.4)"
+                                            }}
+                                        >
+                                            <span>Enviar Pedido para WhatsApp</span>
+                                            <span>💬</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </>
             )}
@@ -183,7 +611,7 @@ export default function Home() {
     );
 }
 
-function PratoCard({ prato, happyHour }) {
+function PratoCard({ prato, happyHour, onAdicionar, qtdNoCarrinho }) {
     const [hovered, setHovered] = useState(false);
 
     const handleClick = () => {
@@ -240,10 +668,23 @@ function PratoCard({ prato, happyHour }) {
                 {prato.descricao && <p style={styles.cardDesc}>{prato.descricao}</p>}
             </div>
 
-            <div style={styles.cardFooter}>
+            <div style={{ ...styles.cardFooter, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ ...styles.cardPreco, ...(happyHour ? styles.cardPrecoHH : isEstrela ? styles.cardPrecoEstrela : {}) }}>
                     R$ {parseFloat(prato.preco).toFixed(2).replace(".", ",")}
                 </span>
+
+                <button
+                    type="button"
+                    className="btn-adicionar-prato"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onAdicionar?.(prato);
+                    }}
+                    title="Adicionar ao pedido via WhatsApp"
+                >
+                    <span>+</span>
+                    <span>{qtdNoCarrinho > 0 ? `(${qtdNoCarrinho})` : "Pedir"}</span>
+                </button>
             </div>
         </div>
     );
@@ -265,6 +706,43 @@ const styles = {
     heroBtns: { display: "flex", gap: "0.8rem", justifyContent: "center", flexWrap: "wrap" },
     heroBtn: { display: "inline-block", background: "#e8b84b", color: "#111", padding: "0.8rem 1.8rem", borderRadius: "50px", fontWeight: "700", fontSize: "0.9rem" },
     heroBtnHH: { display: "inline-block", background: "transparent", border: "2px solid #e8b84b", color: "#e8b84b", padding: "0.8rem 1.8rem", borderRadius: "50px", fontWeight: "700", fontSize: "0.9rem" },
+
+    /* ── BARRA FIXA DE NAVEGAÇÃO DE CATEGORIAS (STICKY) ── */
+    catNavBar: {
+        position: "sticky",
+        top: "70px",
+        zIndex: 90,
+        background: "rgba(255, 255, 255, 0.95)",
+        backdropFilter: "blur(10px)",
+        borderBottom: "1px solid #e8e0d5",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+        overflowX: "auto",
+        whiteSpace: "nowrap",
+        WebkitOverflowScrolling: "touch",
+    },
+    catNavContainer: {
+        maxWidth: "1100px",
+        margin: "0 auto",
+        padding: "0.75rem 1.2rem",
+        display: "flex",
+        gap: "0.6rem",
+        alignItems: "center"
+    },
+    catNavItem: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "0.4rem",
+        background: "#faf8f5",
+        border: "1px solid #e0d9d0",
+        color: "#333",
+        padding: "0.45rem 1rem",
+        borderRadius: "50px",
+        fontSize: "0.85rem",
+        fontWeight: "600",
+        transition: "all 0.2s ease",
+        textDecoration: "none",
+        flexShrink: 0
+    },
 
     section: { maxWidth: "1100px", margin: "0 auto", padding: "4rem 1.5rem" },
     sectionHeader: { textAlign: "center", marginBottom: "3rem" },
