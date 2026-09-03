@@ -1,0 +1,281 @@
+🎯 PROPOSTA DE ENGENHARIA DE CARDÁPIO — BOTECO DO SIVIRINO
+
+Objetivo: transformar o cardápio digital de uma simples vitrine de pratos em uma ferramenta de venda ativa, que induz o cliente a escolher os itens mais lucrativos e mais estratégicos para a casa — sem depender do garçom sugerir nada.
+
+📑 ÍNDICE
+Contexto e Objetivo
+Fundamentos de Engenharia de Cardápio
+Diagnóstico da Plataforma Atual
+Mudanças no Banco de Dados
+Motor de Classificação Automática (Backend)
+Novas Rotas de API
+Painel Admin — Nova Aba "Engenharia de Cardápio"
+Estratégias Visuais no Cardápio Público (Frontend)
+Posicionamento e Ordenação Estratégica
+Rastreamento de Popularidade sem Sistema de Pedidos
+Roadmap de Implementação em Fases
+Métricas de Sucesso
+1. CONTEXTO E OBJETIVO
+
+Hoje o cardápio (Home.jsx) lista os pratos por categoria, sem nenhuma lógica de venda por trás — a ordem é basicamente a ordem de cadastro, todos os pratos têm o mesmo destaque visual, e a decisão de "empurrar" um prato mais lucrativo depende 100% do garçom lembrar de sugerir. Isso é frágil: garçom sob pressão, rotatividade de equipe, dia cheio — a sugestão simplesmente não acontece.
+
+A proposta é fazer o próprio cardápio digital vender por conta própria, usando técnicas consolidadas de menu engineering (usadas por redes como McDonald's, Outback, Applebee's) combinadas com o que já existe na plataforma (categorias dinâmicas, Happy Hour, painel admin).
+
+Isso exige três camadas de mudança:
+
+Dados: o sistema precisa saber o custo de cada prato (hoje só existe preco), para calcular margem.
+Lógica: um motor que classifica cada prato automaticamente e sugere como ele deve aparecer.
+Visual: o frontend precisa renderizar diferente dependendo da classificação — não é só cor, é hierarquia de atenção.
+2. FUNDAMENTOS DE ENGENHARIA DE CARDÁPIO
+
+Antes de mexer em código, vale alinhar os conceitos que vão guiar toda a implementação:
+
+2.1 Matriz de Margem × Popularidade
+
+Todo prato do cardápio se encaixa em um dos 4 quadrantes:
+
+Quadrante	Margem	Popularidade	O que fazer com ele
+⭐ Estrela	Alta	Alta	Dar máximo destaque visual — é o que a casa quer vender
+🐄 Vaca Leiteira (Popular)	Baixa	Alta	Manter visível mas sem destaque especial — já vende sozinho
+❓ Enigma	Alta	Baixa	Precisa de empurrão: melhor foto, melhor descrição, posição estratégica
+🐌 Abacaxi	Baixa	Baixa	Candidato a sair do cardápio ou virar item de reformulação
+
+O objetivo prático: fazer o cliente ver primeiro e com mais apelo visual os "Estrela" e os "Enigma", sem parecer forçado.
+
+2.2 Gatilhos que funcionam num cardápio digital
+Efeito de ancoragem: colocar um item mais caro visível perto de um item-alvo faz o item-alvo parecer "razoável".
+Zona de maior atenção ("Triângulo de Ouro"): em cardápios impressos, o olho vai para o topo-direita, centro e depois canto inferior direito. Em cardápio mobile (rolagem vertical), o equivalente é: primeiro item de cada categoria e item logo antes do usuário rolar para a próxima seção. Os dois primeiros e o último item de cada categoria recebem mais atenção que o meio.
+Excesso de opções paralisa: categorias com mais de 7-8 itens reduzem a taxa de decisão e aumentam abandono. Vale destacar 2-3 "recomendados" no topo de categorias grandes.
+Foto é indutor de escolha, não decoração: um prato com foto de qualidade vende até 30% mais que um sem foto no mesmo grupo. Hoje a plataforma já suporta upload — a proposta é usar isso seletivamente, priorizando fotos boas nos "Estrela" e "Enigma", não em todos os pratos.
+Descrição sensorial vende mais que descrição técnica: "Carne suculenta, temperada por 24h, finalizada na brasa" vende mais que "Carne com tempero, grelhada".
+Preço sem o símbolo de moeda reduz a "dor de pagar": 32,90 performa melhor que R$ 32,90. Evitar linhas pontilhadas ligando nome ao preço (facilita comparação de preço, que é o oposto do que se quer).
+Etiquetas/selos de confiança social: "Mais Pedido", "Favorito da Casa", "Recomendado" — aumentam conversão mesmo sem dado real por trás no início (mas aqui vamos ter dado real, ver seção 10).
+3. DIAGNÓSTICO DA PLATAFORMA ATUAL
+
+O que já existe e pode ser aproveitado:
+
+Recurso já existente	Como aproveitar na engenharia de cardápio
+Tabela prato com preco, categoria, happy_hour, imagem	Base para calcular margem e aplicar destaque visual condicional
+Categorias dinâmicas com ordem	Já dá controle de ordenação por categoria — falta ordenação dentro da categoria
+Painel Admin com CRUD de pratos	Local natural para adicionar campos de custo e destaque
+Sistema de Happy Hour com banner dourado	Prova que o frontend já sabe renderizar seções com destaque visual diferenciado — reaproveitar esse padrão para "Estrela"
+
+O que falta (e é o núcleo desta proposta):
+
+Não existe campo de custo do prato → impossível calcular margem real.
+Não existe nenhum registro de popularidade/vendas → o sistema não sabe o que vende mais.
+Não existe ordenação manual ou automática dentro da categoria → hoje é a ordem de inserção no banco.
+Não existe nenhum destaque visual diferenciado por prato (todos os cards têm o mesmo peso visual).
+Não existe rastreamento de interação do cliente (cliques, visualizações) para servir de proxy de interesse.
+4. MUDANÇAS NO BANCO DE DADOS
+4.1 Alterar tabela prato
+sql
+ALTER TABLE prato
+  ADD COLUMN custo DECIMAL(10,2) DEFAULT NULL COMMENT 'Custo de produção do prato (CMV)',
+  ADD COLUMN ordem_manual INT DEFAULT 0 COMMENT 'Ordem manual dentro da categoria (0 = automático)',
+  ADD COLUMN destaque_manual ENUM('nenhum','estrela','enigma','vaca_leiteira','abacaxi') DEFAULT NULL
+      COMMENT 'Permite o admin sobrescrever a classificação automática',
+  ADD COLUMN selo VARCHAR(30) DEFAULT NULL COMMENT 'Ex: Mais Pedido, Recomendado do Chef, Novidade',
+  ADD COLUMN visualizacoes INT DEFAULT 0 COMMENT 'Contador de cliques/aberturas do card do prato',
+  ADD COLUMN pedidos_estimados INT DEFAULT 0 COMMENT 'Popularidade — ver seção 10 sobre como alimentar este campo';
+
+Por que custo é opcional (NULL por padrão)? Porque a migração não pode quebrar o cardápio existente com 134 itens. Enquanto o admin não preenche o custo de um prato, o motor de classificação simplesmente não o inclui na matriz (ele continua aparecendo normal, sem destaque nem penalização).
+
+4.2 Nova tabela prato_metricas_diarias (histórico para calcular tendência)
+sql
+CREATE TABLE prato_metricas_diarias (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prato_id INT NOT NULL,
+    data DATE NOT NULL,
+    visualizacoes INT DEFAULT 0,
+    cliques_detalhe INT DEFAULT 0,
+    FOREIGN KEY (prato_id) REFERENCES prato(id) ON DELETE CASCADE,
+    UNIQUE KEY prato_dia (prato_id, data)
+);
+
+Isso permite, no futuro, mostrar gráfico de tendência de interesse por prato no painel admin, sem sobrecarregar a tabela principal.
+
+5. MOTOR DE CLASSIFICAÇÃO AUTOMÁTICA (BACKEND)
+
+Novo módulo: backend/src/services/menuEngineeringService.js
+
+Lógica central: para cada prato com custo preenchido, calcular margem e popularidade relativa dentro da própria categoria (comparar hambúrguer com hambúrguer, não com cerveja):
+
+javascript
+// backend/src/services/menuEngineeringService.js
+
+function calcularMargem(preco, custo) {
+  if (!custo || custo <= 0) return null;
+  return ((preco - custo) / preco) * 100; // margem percentual
+}
+
+function classificarPratos(pratosDaCategoria) {
+  const comDados = pratosDaCategoria.filter(p => p.custo && p.custo > 0);
+  if (comDados.length < 3) {
+    // dados insuficientes na categoria para uma matriz confiável
+    return pratosDaCategoria.map(p => ({ ...p, classificacao: null }));
+  }
+
+  const margens = comDados.map(p => calcularMargem(p.preco, p.custo));
+  const popularidades = comDados.map(p => p.pedidos_estimados || p.visualizacoes || 0);
+
+  const margemMedia = media(margens);
+  const popularidadeMedia = media(popularidades);
+
+  return pratosDaCategoria.map(p => {
+    if (p.destaque_manual) {
+      return { ...p, classificacao: p.destaque_manual, origem: 'manual' };
+    }
+    if (!p.custo || p.custo <= 0) {
+      return { ...p, classificacao: null, origem: 'sem_dados' };
+    }
+
+    const margem = calcularMargem(p.preco, p.custo);
+    const popularidade = p.pedidos_estimados || p.visualizacoes || 0;
+
+    const altaMargem = margem >= margemMedia;
+    const altaPopularidade = popularidade >= popularidadeMedia;
+
+    let classificacao;
+    if (altaMargem && altaPopularidade) classificacao = 'estrela';
+    else if (!altaMargem && altaPopularidade) classificacao = 'vaca_leiteira';
+    else if (altaMargem && !altaPopularidade) classificacao = 'enigma';
+    else classificacao = 'abacaxi';
+
+    return { ...p, classificacao, origem: 'automatico', margem: margem.toFixed(1) };
+  });
+}
+
+function media(lista) {
+  return lista.reduce((a, b) => a + b, 0) / lista.length;
+}
+
+module.exports = { classificarPratos, calcularMargem };
+
+Pontos importantes dessa lógica:
+
+A classificação é sempre por categoria, nunca comparando o cardápio inteiro (comparar preço de petisco com preço de prato principal não faz sentido).
+destaque_manual sempre vence — o dono/gerente pode forçar "isso aqui é Estrela" mesmo sem dado de custo, usando conhecimento de negócio.
+Sem pelo menos 3 pratos com custo cadastrado na categoria, o sistema não classifica nada (evita destacar prato errado por amostra pequena).
+6. NOVAS ROTAS DE API
+Método	Rota	Acesso	Descrição
+GET	/pratos/engenharia	Público	Retorna todos os pratos já com o campo classificacao calculado, agrupado por categoria
+PUT	/pratos/:id/custo	Privado (admin)	Atualiza o campo custo de um prato
+PUT	/pratos/:id/destaque	Privado (admin)	Define destaque_manual e/ou selo manualmente
+PUT	/pratos/:id/ordem	Privado (admin)	Atualiza ordem_manual (drag-and-drop no admin)
+POST	/pratos/:id/visualizacao	Público	Incrementa visualizacoes — chamado pelo frontend quando o cliente expande/clica no prato
+GET	/pratos/matriz	Privado (admin)	Retorna dados agregados para o gráfico de dispersão margem × popularidade no painel
+
+Exemplo de resposta de GET /pratos/engenharia:
+
+json
+{
+  "categoria": "Petiscos",
+  "pratos": [
+    {
+      "id": 12,
+      "nome": "Bolinho de Feijoada",
+      "preco": 34.90,
+      "classificacao": "estrela",
+      "selo": "Mais Pedido",
+      "margem": "68.4"
+    },
+    {
+      "id": 15,
+      "nome": "Batata Frita Simples",
+      "preco": 22.00,
+      "classificacao": "vaca_leiteira",
+      "selo": null
+    }
+  ]
+}
+7. PAINEL ADMIN — NOVA ABA "ENGENHARIA DE CARDÁPIO"
+
+Adicionar uma 5ª aba em Admin.jsx, ao lado de Pratos / Categorias / Happy Hour / QR Code:
+
+Conteúdo da aba:
+Gráfico de dispersão (matriz): eixo X = popularidade, eixo Y = margem, um ponto por prato, colorido por classificação. Permite ao gerente ver de relance quais pratos estão em cada quadrante.
+Lista de pratos "sem dados": todos os pratos sem custo preenchido, com atalho para preencher rapidamente (campo inline, sem precisar abrir o formulário completo).
+Lista de "Enigmas" (prioridade de ação): pratos com alta margem e baixa popularidade — são os que mais valem a pena receber selo, boa foto e melhor posição, porque o lucro por venda já é alto.
+Toggle de selo rápido: botão de um clique para aplicar "🔥 Mais Pedido" / "👨‍🍳 Recomendado do Chef" / "✨ Novidade" em qualquer prato, sobrescrevendo a classificação automática quando o dono achar necessário.
+Drag-and-drop de ordem dentro da categoria: interface simples de arrastar cards para definir ordem_manual, aproveitando o mesmo padrão visual do CRUD de pratos que já existe.
+8. ESTRATÉGIAS VISUAIS NO CARDÁPIO PÚBLICO (FRONTEND)
+
+Mudanças em Home.jsx e no CSS (index.css), condicionadas à classificacao retornada por /pratos/engenharia:
+
+Classificação	Tratamento visual
+estrela	Borda dourada sutil no card, selo "🔥 Mais Pedido" ou selo manual, foto em destaque maior que os demais cards da categoria, posicionado nas 2 primeiras posições da categoria
+enigma	Sem selo de popularidade (seria falso), mas foto obrigatória e descrição mais longa/sensorial; posicionado na 1ª ou na última posição da categoria (zonas de maior retenção de atenção)
+vaca_leiteira	Tratamento padrão, sem destaque — já vende bem sozinho, não precisa "gastar" atenção visual nele
+abacaxi	Tratamento padrão ou levemente reduzido (foto menor, sem destaque); não remover do cardápio automaticamente — isso fica a critério do dono na aba de Engenharia
+Outras mudanças de UI recomendadas (independem de dado de custo, podem entrar já na Fase 1):
+Remover o símbolo R$ do preço, mostrar só 32,90.
+Tirar qualquer linha ou espaçamento pontilhado entre nome do prato e preço (evita leitura em coluna vertical de preços, que estimula comparação e escolha do mais barato).
+Limitar a 6-7 pratos visíveis por categoria antes de precisar expandir/rolar mais, com um destaque tipo "Ver mais opções em [Categoria]" — isso reduz a paralisia de escolha e mantém os itens estratégicos no topo.
+Adicionar 1 item "âncora" de preço mais alto no topo de categorias com muita variação de preço (ex: uma picanha de R$120 no topo da seção de carnes faz os pratos de R$60-70 parecerem mais acessíveis por comparação).
+9. POSICIONAMENTO E ORDENAÇÃO ESTRATÉGICA
+
+Ordem de renderização dentro de cada categoria (o backend já entrega os pratos ordenados assim em /pratos/engenharia, o frontend só precisa respeitar a ordem recebida):
+
+Enigma de maior margem primeiro (posição 1) — é o item que mais precisa de empurrão e a posição 1 é a de maior atenção.
+Estrela de maior popularidade em seguida (posições 2 e 3) — reforça a mensagem de "isso aqui é bom" com prova social.
+Vaca Leiteira no meio da lista — ela já vende, não precisa de posição privilegiada.
+Outro Enigma ou Estrela na última posição da categoria — segunda zona de maior retenção de atenção (efeito de recência).
+Abacaxi distribuído entre as posições intermediárias, nunca no topo ou no fim.
+
+Isso é calculado no backend (ordenarPorEstrategia() dentro do menuEngineeringService.js) e sobrescrito por ordem_manual sempre que o admin definir manualmente.
+
+10. RASTREAMENTO DE POPULARIDADE SEM SISTEMA DE PEDIDOS
+
+Ponto importante: a plataforma não tem checkout próprio (os pedidos acontecem via garçom/iFood, fora do sistema). Então "popularidade" não pode vir de vendas reais automaticamente — é preciso resolver isso com uma combinação de 3 fontes:
+
+10.1 Proxy de interesse: cliques/visualizações (automático, imediato)
+
+Toda vez que o cliente expande a foto ou os detalhes de um prato no cardápio, o frontend chama POST /pratos/:id/visualizacao. Isso não é venda real, mas é o melhor proxy disponível sem integração com o caixa, e já funciona desde o dia 1.
+
+10.2 Input manual do gerente (disponível imediatamente, mais confiável no início)
+
+Na aba de Engenharia de Cardápio, um campo simples: "Pratos mais vendidos do mês (estimativa)", onde o dono ordena/marca por conhecimento próprio de operação. Isso alimenta pedidos_estimados e pode ser atualizado mensalmente em 5 minutos.
+
+10.3 Integração futura com PDV/iFood (fase avançada, opcional)
+
+Se a casa usar algum sistema de PDV (Ex: Consumer, Colibri) ou quiser puxar relatório do iFood, dá pra importar CSV de vendas periodicamente e popular pedidos_estimados com dado real. Isso não é necessário para lançar a Fase 1, mas é o caminho de evolução natural depois que a base de custo e classificação já estiver rodando.
+
+Recomendação de ordem prática: começar com 10.2 (input manual, o dono já sabe o que vende) + 10.1 (cliques, roda sozinho) e deixar 10.3 para uma fase futura, quando/se a casa adotar um PDV integrável.
+
+11. ROADMAP DE IMPLEMENTAÇÃO EM FASES
+Fase 1 — Fundação de dados (1-2 dias)
+Migração SQL: adicionar colunas em prato (seção 4.1).
+Atualizar pratoController.js para aceitar custo, destaque_manual, selo, ordem_manual no CRUD existente.
+Ajustes de UI simples e imediatos no cardápio: remover R$, remover linha pontilhada de preço (seção 8, últimos itens).
+Fase 2 — Motor de classificação (2-3 dias)
+Criar menuEngineeringService.js (seção 5).
+Criar rota GET /pratos/engenharia (seção 6).
+Criar rota POST /pratos/:id/visualizacao e instrumentar o clique no Home.jsx.
+Fase 3 — Painel Admin (3-4 dias)
+Nova aba "Engenharia de Cardápio" em Admin.jsx (seção 7).
+Gráfico de dispersão (pode usar Recharts, já compatível com o stack React existente).
+Campo de input manual de pratos mais vendidos (seção 10.2).
+Fase 4 — Frontend estratégico (2-3 dias)
+Home.jsx passa a consumir /pratos/engenharia em vez de /pratos.
+Aplicar estilos condicionais por classificacao (seção 8).
+Aplicar ordenação estratégica recebida do backend (seção 9).
+Fase 5 — Ajuste fino e evolução (contínuo)
+Revisar classificações mensalmente com o dono (o destaque_manual sempre permite ajuste humano).
+Avaliar integração com PDV/iFood para dado de venda real (seção 10.3).
+Testar variações de selo/texto e observar mudança na taxa de cliques.
+12. MÉTRICAS DE SUCESSO
+
+Para saber se a engenharia de cardápio está funcionando, acompanhar mês a mês:
+
+Ticket médio estimado (se possível cruzar com dado do iFood/PDV).
+Distribuição de cliques por classificação — o esperado é que, com o tempo, "Estrela" e "Enigma" recebam proporcionalmente mais cliques/visualizações do que recebiam antes da mudança.
+Percentual de pratos "sem dados" (sem custo cadastrado) — meta é chegar a 100% dos pratos ativos com custo preenchido, para a matriz ficar cada vez mais confiável.
+Feedback qualitativo da equipe de salão: perguntar aos garçons se estão notando pedidos diferentes dos itens destacados no cardápio digital.
+RESUMO EXECUTIVO
+O que muda	Impacto esperado
+Cardápio passa a ter destaque visual condicional (não é mais "tudo igual")	Cliente é guiado visualmente sem perceber que está sendo guiado
+Sistema sabe a margem de cada prato	Decisão de o que destacar deixa de ser "achismo" e vira dado
+Ordenação estratégica dentro da categoria	Itens mais lucrativos ocupam as posições de maior atenção
+Painel de engenharia de cardápio no admin	O dono ganha visibilidade e controle sem depender de terceiros para essa análise
+Zero dependência do garçom para "empurrar" prato	A venda induzida acontece pelo próprio cardápio, de forma consistente, em todo turno

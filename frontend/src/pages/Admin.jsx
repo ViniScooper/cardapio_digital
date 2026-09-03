@@ -28,12 +28,22 @@ const getEmoji = (nome = "") => {
     return "🍴";
 };
 
-const FORM_VAZIO = { nome: "", descricao: "", preco: "", categoria: "", happy_hour: false };
+const FORM_VAZIO = { 
+    nome: "", 
+    descricao: "", 
+    preco: "", 
+    categoria: "", 
+    happy_hour: false,
+    custo: "",
+    selo: "",
+    destaque_manual: ""
+};
 
 export default function Admin() {
     const [aba,        setAba]        = useState("pratos");
     const [pratos,     setPratos]     = useState([]);
     const [categorias, setCategorias] = useState([]);
+    const [matrizEng,  setMatrizEng]  = useState(null);
     const [loading,    setLoading]    = useState(true);
     const [enviando,   setEnviando]   = useState(false);
     const [mensagem,   setMensagem]   = useState("");
@@ -66,24 +76,26 @@ export default function Admin() {
         Promise.all([
             api.get("/pratos"),
             api.get("/categorias"),
-            api.get("/config")
+            api.get("/config"),
+            api.get("/pratos/matriz").catch(() => ({ data: null }))
         ])
-            .then(([rPratos, rCats, rConfig]) => {
+            .then(([rPratos, rCats, rConfig, rMatriz]) => {
                 setPratos(rPratos.data);
                 setCategorias(rCats.data);
+                if (rMatriz?.data) setMatrizEng(rMatriz.data);
                 if (rConfig?.data) {
                     setConfigHH({
-                        hh_ativo: !!rConfig.data.hh_ativo,
-                        hh_dias: rConfig.data.hh_dias || "Segunda, Terça e Quarta",
+                        hh_ativo:  !!rConfig.data.hh_ativo,
+                        hh_dias:   rConfig.data.hh_dias   || "Segunda, Terça e Quarta",
                         hh_inicio: rConfig.data.hh_inicio || "19:00",
-                        hh_fim: rConfig.data.hh_fim || "22:00"
+                        hh_fim:    rConfig.data.hh_fim    || "22:00"
                     });
                 }
                 if (!form.categoria && rCats.data.length > 0) {
                     setForm(f => ({ ...f, categoria: rCats.data[0].nome }));
                 }
             })
-            .catch(() => setErro("Erro ao carregar dados."))
+            .catch(() => setErro("Erro ao carregar dados do servidor."))
             .finally(() => setLoading(false));
     }, []);
 
@@ -114,11 +126,14 @@ export default function Admin() {
         setAba("pratos");
         setEditandoId(prato.id);
         setForm({
-            nome:       prato.nome,
-            descricao:  prato.descricao || "",
-            preco:      prato.preco,
-            categoria:  prato.categoria || categorias[0]?.nome || "",
-            happy_hour: !!prato.happy_hour
+            nome:            prato.nome,
+            descricao:       prato.descricao || "",
+            preco:           prato.preco,
+            categoria:       prato.categoria || categorias[0]?.nome || "",
+            happy_hour:      !!prato.happy_hour,
+            custo:           prato.custo || "",
+            selo:            prato.selo || "",
+            destaque_manual: prato.destaque_manual || ""
         });
         setPreview(prato.imagem ? `${API_URL}${prato.imagem}` : null);
         setImagem(null);
@@ -132,11 +147,14 @@ export default function Admin() {
         setErro(""); setMensagem(""); setEnviando(true);
         try {
             const fd = new FormData();
-            fd.append("nome",       form.nome);
-            fd.append("descricao",  form.descricao);
-            fd.append("preco",      form.preco);
-            fd.append("categoria",  form.categoria);
-            fd.append("happy_hour", form.happy_hour ? "true" : "false");
+            fd.append("nome",            form.nome);
+            fd.append("descricao",       form.descricao);
+            fd.append("preco",           form.preco);
+            fd.append("categoria",       form.categoria);
+            fd.append("happy_hour",      form.happy_hour ? "true" : "false");
+            fd.append("custo",           form.custo || "");
+            fd.append("selo",            form.selo || "");
+            fd.append("destaque_manual", form.destaque_manual || "");
             if (imagem) fd.append("imagem", imagem);
 
             if (editandoId) {
@@ -252,11 +270,113 @@ export default function Admin() {
                 {/* Abas */}
                 <div className="admin-abas" style={styles.abas}>
                     <button onClick={() => setAba("pratos")}     className="admin-aba" style={{ ...styles.aba, ...(aba === "pratos"     ? styles.abaAtiva : {}) }}>🍽️ Pratos</button>
+                    <button onClick={() => setAba("engenharia")} className="admin-aba" style={{ ...styles.aba, ...(aba === "engenharia" ? styles.abaAtiva : {}) }}>📊 Engenharia</button>
                     <button onClick={() => setAba("categorias")} className="admin-aba" style={{ ...styles.aba, ...(aba === "categorias" ? styles.abaAtiva : {}) }}>🏷️ Categorias</button>
                     <button onClick={() => setAba("happyhour")}  className="admin-aba" style={{ ...styles.aba, ...(aba === "happyhour"  ? styles.abaAtiva : {}) }}>⚡ Happy Hour</button>
                     <button onClick={() => setAba("qrcode")}     className="admin-aba" style={{ ...styles.aba, ...(aba === "qrcode"     ? styles.abaAtiva : {}) }}>📱 QR Code</button>
                 </div>
             </div>
+
+            {/* ── ABA ENGENHARIA DE CARDÁPIO ── */}
+            {aba === "engenharia" && (
+                <div className="admin-body" style={{ ...styles.body, gridTemplateColumns: "1fr" }}>
+                    <div className="admin-card" style={styles.card}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
+                            <div>
+                                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.6rem", fontWeight: "700", color: "#1a1a1a", margin: 0 }}>
+                                    🎯 Matriz de Engenharia de Cardápio (Kasavana & Smith)
+                                </h2>
+                                <p style={{ color: "#777", fontSize: "0.85rem", marginTop: "0.3rem" }}>
+                                    Classificação automática baseada na margem de lucro e no interesse/popularidade dos pratos.
+                                </p>
+                            </div>
+                            <button onClick={carregarTudo} style={{ ...styles.btnCancelar, padding: "0.5rem 1rem", fontSize: "0.85rem" }}>
+                                🔄 Atualizar Dados
+                            </button>
+                        </div>
+
+                        {/* Cards Resumo dos 4 Quadrantes */}
+                        {matrizEng?.resumo && (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
+                                <div style={{ background: "#fffdf5", border: "2px solid #e8b84b", borderRadius: "12px", padding: "1.2rem" }}>
+                                    <span style={{ fontSize: "1.8rem" }}>⭐</span>
+                                    <h3 style={{ fontSize: "1.1rem", color: "#b38210", margin: "0.4rem 0" }}>Estrelas ({matrizEng.resumo.estrelas})</h3>
+                                    <p style={{ fontSize: "0.78rem", color: "#666" }}>Alta Margem + Alta Venda. Destaque máximo garantido no cardápio.</p>
+                                </div>
+                                <div style={{ background: "#f5fbf6", border: "2px solid #2e7d32", borderRadius: "12px", padding: "1.2rem" }}>
+                                    <span style={{ fontSize: "1.8rem" }}>🐄</span>
+                                    <h3 style={{ fontSize: "1.1rem", color: "#2e7d32", margin: "0.4rem 0" }}>Vacas Leiteiras ({matrizEng.resumo.vacas_leiteiras})</h3>
+                                    <p style={{ fontSize: "0.78rem", color: "#666" }}>Baixa Margem + Alta Venda. Mantidos visíveis, já vendem por conta própria.</p>
+                                </div>
+                                <div style={{ background: "#fbf6fd", border: "2px solid #8e44ad", borderRadius: "12px", padding: "1.2rem" }}>
+                                    <span style={{ fontSize: "1.8rem" }}>❓</span>
+                                    <h3 style={{ fontSize: "1.1rem", color: "#8e44ad", margin: "0.4rem 0" }}>Enigmas ({matrizEng.resumo.enigmas})</h3>
+                                    <p style={{ fontSize: "0.78rem", color: "#666" }}>Alta Margem + Baixa Venda. Oportunidade de ouro: precisam de fotos e selos.</p>
+                                </div>
+                                <div style={{ background: "#fafafa", border: "2px solid #999", borderRadius: "12px", padding: "1.2rem" }}>
+                                    <span style={{ fontSize: "1.8rem" }}>🐌</span>
+                                    <h3 style={{ fontSize: "1.1rem", color: "#555", margin: "0.4rem 0" }}>Abacaxis ({matrizEng.resumo.abacaxis})</h3>
+                                    <p style={{ fontSize: "0.78rem", color: "#666" }}>Baixa Margem + Pouca Procura. Avaliar reformulação de receita ou preço.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tabela Interativa de Itens */}
+                        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: "700", marginBottom: "1rem" }}>
+                            📋 Painel Estratégico de Pratos ({pratos.length} itens cadastrados)
+                        </h3>
+                        <div style={{ overflowX: "auto" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
+                                <thead>
+                                    <tr style={{ background: "#f7f3ed", borderBottom: "2px solid #e0d9d0" }}>
+                                        <th style={{ padding: "0.8rem" }}>Prato</th>
+                                        <th style={{ padding: "0.8rem" }}>Categoria</th>
+                                        <th style={{ padding: "0.8rem" }}>Preço</th>
+                                        <th style={{ padding: "0.8rem" }}>Custo (CMV)</th>
+                                        <th style={{ padding: "0.8rem" }}>Margem</th>
+                                        <th style={{ padding: "0.8rem" }}>Classificação</th>
+                                        <th style={{ padding: "0.8rem" }}>Selo Ativo</th>
+                                        <th style={{ padding: "0.8rem", textAlign: "right" }}>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pratos.map((p) => {
+                                        const margem = (p.preco && p.custo) ? (((p.preco - p.custo) / p.preco) * 100).toFixed(1) : null;
+                                        return (
+                                            <tr key={p.id} style={{ borderBottom: "1px solid #eee" }}>
+                                                <td style={{ padding: "0.8rem", fontWeight: "600" }}>{p.nome}</td>
+                                                <td style={{ padding: "0.8rem", color: "#777" }}>{p.categoria}</td>
+                                                <td style={{ padding: "0.8rem", fontWeight: "700" }}>R$ {parseFloat(p.preco).toFixed(2).replace(".", ",")}</td>
+                                                <td style={{ padding: "0.8rem", color: p.custo ? "#333" : "#bbb" }}>
+                                                    {p.custo ? `R$ ${parseFloat(p.custo).toFixed(2).replace(".", ",")}` : "Sem custo"}
+                                                </td>
+                                                <td style={{ padding: "0.8rem", fontWeight: "600", color: margem > 55 ? "#2e7d32" : margem ? "#c0392b" : "#aaa" }}>
+                                                    {margem ? `${margem}%` : "—"}
+                                                </td>
+                                                <td style={{ padding: "0.8rem" }}>
+                                                    {p.classificacao === "estrela" && <span style={{ background: "#fef8e7", border: "1px solid #e8b84b", color: "#b38210", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>⭐ Estrela</span>}
+                                                    {p.classificacao === "vaca_leiteira" && <span style={{ background: "#e8f5e9", color: "#2e7d32", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>🐄 Vaca Leiteira</span>}
+                                                    {p.classificacao === "enigma" && <span style={{ background: "#f3e5f5", color: "#7b1fa2", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>❓ Enigma</span>}
+                                                    {p.classificacao === "abacaxi" && <span style={{ background: "#f5f5f5", color: "#666", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem" }}>🐌 Abacaxi</span>}
+                                                    {!p.classificacao && <span style={{ color: "#aaa", fontSize: "0.75rem" }}>Sem dados</span>}
+                                                </td>
+                                                <td style={{ padding: "0.8rem" }}>
+                                                    {p.selo ? <span style={{ background: "#e8b84b", color: "#111", padding: "0.2rem 0.5rem", borderRadius: "8px", fontSize: "0.72rem", fontWeight: "700" }}>{p.selo}</span> : <span style={{ color: "#ccc" }}>—</span>}
+                                                </td>
+                                                <td style={{ padding: "0.8rem", textAlign: "right" }}>
+                                                    <button onClick={() => iniciarEdicao(p)} style={{ ...styles.btnEditar, padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>
+                                                        ✏️ Ajustar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── ABA PRATOS ── */}
             {aba === "pratos" && (
@@ -297,9 +417,16 @@ export default function Admin() {
 
                             <div className="admin-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
                                 <div style={styles.grupo}>
-                                    <label style={styles.label}>Preço (R$) *</label>
+                                    <label style={styles.label}>Preço de Venda (R$) *</label>
                                     <input style={styles.input} type="number" placeholder="0,00" step="0.01" min="0.01" value={form.preco} onChange={(e) => setForm(f => ({ ...f, preco: e.target.value }))} required />
                                 </div>
+                                <div style={styles.grupo}>
+                                    <label style={styles.label}>Custo de Produção (CMV R$)</label>
+                                    <input style={styles.input} type="number" placeholder="Opcional (ex: 25.00)" step="0.01" min="0" value={form.custo} onChange={(e) => setForm(f => ({ ...f, custo: e.target.value }))} />
+                                </div>
+                            </div>
+
+                            <div className="admin-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
                                 <div style={styles.grupo}>
                                     <label style={styles.label}>Categoria</label>
                                     <select style={{ ...styles.input, cursor: "pointer" }} value={form.categoria} onChange={(e) => setForm(f => ({ ...f, categoria: e.target.value }))}>
@@ -308,6 +435,22 @@ export default function Admin() {
                                         ))}
                                     </select>
                                 </div>
+                                <div style={styles.grupo}>
+                                    <label style={styles.label}>Selo Promocional</label>
+                                    <input style={styles.input} type="text" placeholder="Ex: 🔥 Mais Pedido, 👨‍🍳 Recomendado" value={form.selo} onChange={(e) => setForm(f => ({ ...f, selo: e.target.value }))} />
+                                </div>
+                            </div>
+
+                            <div style={styles.grupo}>
+                                <label style={styles.label}>Classificação Estratégica (Engenharia de Cardápio)</label>
+                                <select style={{ ...styles.input, cursor: "pointer" }} value={form.destaque_manual} onChange={(e) => setForm(f => ({ ...f, destaque_manual: e.target.value }))}>
+                                    <option value="">Automático (Calculado pela Matriz Margem × Vendas)</option>
+                                    <option value="estrela">⭐ Estrela (Alta Margem + Alto Destaque Visual)</option>
+                                    <option value="enigma">❓ Enigma (Alta Margem + Chamar Mais Atenção)</option>
+                                    <option value="vaca_leiteira">🐄 Vaca Leiteira (Vende Muito / Margem Baixa)</option>
+                                    <option value="abacaxi">🐌 Abacaxi (Baixa Margem / Avaliar)</option>
+                                    <option value="nenhum">Nenhum Destaque Especial</option>
+                                </select>
                             </div>
 
                             {/* Toggle Happy Hour */}

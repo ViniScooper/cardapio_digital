@@ -186,37 +186,62 @@ export default function Home() {
 function PratoCard({ prato, happyHour }) {
     const [hovered, setHovered] = useState(false);
 
+    const handleClick = () => {
+        if (prato.id) {
+            api.post(`/pratos/${prato.id}/visualizacao`).catch(() => {});
+        }
+    };
+
+    const isEstrela = prato.classificacao === "estrela";
+    const isEnigma = prato.classificacao === "enigma";
+
     return (
         <div
             style={{
                 ...styles.card,
                 ...(hovered ? styles.cardHover : {}),
                 ...(happyHour ? styles.cardHH : {}),
+                ...(isEstrela ? styles.cardEstrela : {}),
             }}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            onClick={handleClick}
         >
             {prato.imagem ? (
                 <div style={styles.cardImgBox}>
                     <img src={`${API_URL}${prato.imagem}`} alt={prato.nome} style={styles.cardImg} />
-                    {happyHour && <div style={styles.hhBadge}>🍺 Happy Hour</div>}
+                    {prato.selo ? (
+                        <div style={styles.seloBadge}>{prato.selo}</div>
+                    ) : isEstrela ? (
+                        <div style={styles.seloBadge}>🔥 Mais Pedido</div>
+                    ) : happyHour ? (
+                        <div style={styles.hhBadge}>🍺 Happy Hour</div>
+                    ) : null}
                 </div>
             ) : (
-                <div style={{ ...styles.cardEmoji, ...(happyHour ? styles.cardEmojiHH : {}) }}>
+                <div style={{ ...styles.cardEmoji, ...(happyHour ? styles.cardEmojiHH : isEstrela ? styles.cardEmojiEstrela : {}) }}>
                     {getEmoji(prato.nome)}
-                    {happyHour && <div style={styles.hhBadgeEmoji}>🍺 Happy Hour</div>}
+                    {prato.selo ? (
+                        <div style={styles.seloBadgeEmoji}>{prato.selo}</div>
+                    ) : isEstrela ? (
+                        <div style={styles.seloBadgeEmoji}>🔥 Mais Pedido</div>
+                    ) : happyHour ? (
+                        <div style={styles.hhBadgeEmoji}>🍺 Happy Hour</div>
+                    ) : null}
                 </div>
             )}
 
             <div style={styles.cardBody}>
-                <h3 style={{ ...styles.cardNome, ...(happyHour ? styles.cardNomeHH : {}) }}>
-                    {prato.nome}
-                </h3>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                    <h3 style={{ ...styles.cardNome, ...(happyHour ? styles.cardNomeHH : isEstrela ? styles.cardNomeEstrela : {}) }}>
+                        {prato.nome}
+                    </h3>
+                </div>
                 {prato.descricao && <p style={styles.cardDesc}>{prato.descricao}</p>}
             </div>
 
             <div style={styles.cardFooter}>
-                <span style={{ ...styles.cardPreco, ...(happyHour ? styles.cardPrecoHH : {}) }}>
+                <span style={{ ...styles.cardPreco, ...(happyHour ? styles.cardPrecoHH : isEstrela ? styles.cardPrecoEstrela : {}) }}>
                     R$ {parseFloat(prato.preco).toFixed(2).replace(".", ",")}
                 </span>
             </div>
@@ -275,25 +300,31 @@ const styles = {
     hhGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1.5rem" },
 
     /* ── CARD ── */
-    card: { background: "#ffffff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", transition: "transform 0.25s ease, box-shadow 0.25s ease" },
+    card: { background: "#ffffff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", transition: "transform 0.25s ease, box-shadow 0.25s ease", cursor: "pointer" },
     cardHover: { transform: "translateY(-4px)", boxShadow: "0 10px 24px rgba(0,0,0,0.1)" },
     cardHH: { background: "#1a1200", border: "1px solid rgba(232,184,75,0.2)" },
+    cardEstrela: { border: "2px solid #e8b84b", boxShadow: "0 4px 20px rgba(232, 184, 75, 0.15)" },
 
     cardImgBox: { width: "100%", height: "200px", overflow: "hidden", position: "relative" },
     cardImg: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
     hhBadge: { position: "absolute", top: "10px", left: "10px", background: "#e8b84b", color: "#111", padding: "0.25rem 0.7rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: "700" },
+    seloBadge: { position: "absolute", top: "10px", left: "10px", background: "linear-gradient(135deg, #e8b84b, #d49b28)", color: "#111", padding: "0.3rem 0.8rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: "800", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" },
 
     cardEmoji: { background: "linear-gradient(135deg, #fff8e7, #fcefc7)", textAlign: "center", fontSize: "3rem", padding: "1.8rem 1rem 1.4rem", position: "relative" },
     cardEmojiHH: { background: "linear-gradient(135deg, #1e1600, #2a1e00)" },
+    cardEmojiEstrela: { background: "linear-gradient(135deg, #fffcf5, #fef5dc)" },
     hhBadgeEmoji: { position: "absolute", top: "10px", left: "10px", background: "#e8b84b", color: "#111", padding: "0.25rem 0.7rem", borderRadius: "20px", fontSize: "0.75rem", fontWeight: "700" },
+    seloBadgeEmoji: { position: "absolute", top: "10px", left: "10px", background: "linear-gradient(135deg, #e8b84b, #d49b28)", color: "#111", padding: "0.3rem 0.8rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: "800", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" },
 
     cardBody: { padding: "1.2rem 1.4rem", flex: 1 },
     cardNome: { fontFamily: "'Playfair Display', serif", fontSize: "1.05rem", fontWeight: "700", color: "#1a1a1a", marginBottom: "0.4rem" },
     cardNomeHH: { color: "#e8b84b" },
+    cardNomeEstrela: { color: "#111" },
     cardDesc: { fontSize: "0.84rem", color: "#999", lineHeight: "1.6" },
     cardFooter: { padding: "0.9rem 1.4rem", borderTop: "1px solid #f0ebe3", display: "flex", justifyContent: "flex-end" },
     cardPreco: { background: "linear-gradient(135deg, #c0392b, #96281b)", color: "#fff", padding: "0.4rem 1.1rem", borderRadius: "50px", fontSize: "0.95rem", fontWeight: "700" },
-    cardPrecoHH: { background: "linear-gradient(135deg, #e8b84b, #c99a30)" , color: "#111" },
+    cardPrecoEstrela: { background: "linear-gradient(135deg, #e8b84b, #c49020)", color: "#111" },
+    cardPrecoHH: { background: "linear-gradient(135deg, #e8b84b, #c99a30)", color: "#111" },
 
     center: { textAlign: "center", padding: "4rem 0" },
     spinner: { width: "36px", height: "36px", border: "3px solid #f0ebe3", borderTop: "3px solid #e8b84b", borderRadius: "50%", margin: "0 auto", animation: "spin 0.8s linear infinite" },

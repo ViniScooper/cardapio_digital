@@ -3,62 +3,98 @@
 // ============================================================
 
 const db = require("../config/database");
+const { classificarPratos, ordenarPorEstrategia } = require("../services/menuEngineeringService");
 
-// GET /pratos — público
+// GET /pratos — público (agora com inteligência de cardápio e ordenação estratégica)
 const listarPratos = (req, res) => {
-    const sql = "SELECT * FROM prato ORDER BY categoria, criado_em DESC";
+    const sql = "SELECT * FROM prato ORDER BY categoria, ordem_manual ASC, preco DESC";
     db.query(sql, (erro, resultado) => {
         if (erro) return res.status(500).json({ erro: erro.message });
-        res.json(resultado);
+
+        // Agrupa por categoria para classificar individualmente
+        const porCategoria = {};
+        for (const p of resultado) {
+            const cat = p.categoria || "Cardápio";
+            if (!porCategoria[cat]) porCategoria[cat] = [];
+            porCategoria[cat].push(p);
+        }
+
+        let listaFinal = [];
+        for (const cat of Object.keys(porCategoria)) {
+            const classificados = classificarPratos(porCategoria[cat]);
+            const ordenados = ordenarPorEstrategia(classificados);
+            listaFinal = listaFinal.concat(ordenados);
+        }
+
+        res.json(listaFinal);
     });
 };
 
 // POST /pratos — admin
 const criarPrato = (req, res) => {
-    const { nome, descricao, preco, categoria, happy_hour } = req.body;
+    const { nome, descricao, preco, categoria, happy_hour, custo, selo, destaque_manual, ordem_manual } = req.body;
 
     if (!nome || !preco) {
         return res.status(400).json({ erro: "Nome e preço são obrigatórios." });
     }
 
     const imagem     = req.file ? `/uploads/${req.file.filename}` : null;
-    const cat        = categoria  || "Cardápio";
+    const cat        = categoria || "Cardápio";
     const isHH       = happy_hour === "true" || happy_hour === true || happy_hour === 1 ? 1 : 0;
+    const vCusto     = custo ? parseFloat(custo) : null;
+    const vSelo      = selo || null;
+    const vDestaque  = destaque_manual || null;
+    const vOrdem     = ordem_manual ? parseInt(ordem_manual, 10) : 0;
 
-    const sql = "INSERT INTO prato (nome, descricao, preco, categoria, happy_hour, imagem) VALUES (?, ?, ?, ?, ?, ?)";
-    db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, imagem], (erro, resultado) => {
+    const sql = `
+        INSERT INTO prato (nome, descricao, preco, categoria, happy_hour, imagem, custo, selo, destaque_manual, ordem_manual) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, imagem, vCusto, vSelo, vDestaque, vOrdem], (erro, resultado) => {
         if (erro) return res.status(500).json({ erro: erro.message });
-        res.status(201).json({ mensagem: "Prato cadastrado!", id: resultado.insertId });
+        res.status(201).json({ mensagem: "Prato cadastrado com sucesso!", id: resultado.insertId });
     });
 };
 
-// PUT /pratos/:id — admin (edição)
+// PUT /pratos/:id — admin (edição com custo e inteligência)
 const editarPrato = (req, res) => {
     const { id } = req.params;
-    const { nome, descricao, preco, categoria, happy_hour } = req.body;
+    const { nome, descricao, preco, categoria, happy_hour, custo, selo, destaque_manual, ordem_manual, pedidos_estimados } = req.body;
 
     if (!nome || !preco) {
         return res.status(400).json({ erro: "Nome e preço são obrigatórios." });
     }
 
-    const isHH = happy_hour === "true" || happy_hour === true || happy_hour === 1 ? 1 : 0;
-    const cat  = categoria || "Cardápio";
+    const isHH      = happy_hour === "true" || happy_hour === true || happy_hour === 1 ? 1 : 0;
+    const cat       = categoria || "Cardápio";
+    const vCusto    = (custo !== undefined && custo !== null && custo !== "") ? parseFloat(custo) : null;
+    const vSelo     = selo || null;
+    const vDestaque = destaque_manual || null;
+    const vOrdem    = ordem_manual ? parseInt(ordem_manual, 10) : 0;
+    const vPedidos  = pedidos_estimados ? parseInt(pedidos_estimados, 10) : 0;
 
-    // Se enviou nova imagem, atualiza; senão mantém a atual
     if (req.file) {
         const novaImagem = `/uploads/${req.file.filename}`;
-        const sql = "UPDATE prato SET nome=?, descricao=?, preco=?, categoria=?, happy_hour=?, imagem=? WHERE id=?";
-        db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, novaImagem, id], (erro, resultado) => {
+        const sql = `
+            UPDATE prato 
+            SET nome=?, descricao=?, preco=?, categoria=?, happy_hour=?, imagem=?, custo=?, selo=?, destaque_manual=?, ordem_manual=?, pedidos_estimados=?
+            WHERE id=?
+        `;
+        db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, novaImagem, vCusto, vSelo, vDestaque, vOrdem, vPedidos, id], (erro, resultado) => {
             if (erro) return res.status(500).json({ erro: erro.message });
             if (resultado.affectedRows === 0) return res.status(404).json({ erro: "Prato não encontrado." });
-            res.json({ mensagem: "Prato atualizado!" });
+            res.json({ mensagem: "Prato atualizado com sucesso!" });
         });
     } else {
-        const sql = "UPDATE prato SET nome=?, descricao=?, preco=?, categoria=?, happy_hour=? WHERE id=?";
-        db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, id], (erro, resultado) => {
+        const sql = `
+            UPDATE prato 
+            SET nome=?, descricao=?, preco=?, categoria=?, happy_hour=?, custo=?, selo=?, destaque_manual=?, ordem_manual=?, pedidos_estimados=?
+            WHERE id=?
+        `;
+        db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, vCusto, vSelo, vDestaque, vOrdem, vPedidos, id], (erro, resultado) => {
             if (erro) return res.status(500).json({ erro: erro.message });
             if (resultado.affectedRows === 0) return res.status(404).json({ erro: "Prato não encontrado." });
-            res.json({ mensagem: "Prato atualizado!" });
+            res.json({ mensagem: "Prato atualizado com sucesso!" });
         });
     }
 };
@@ -73,4 +109,67 @@ const deletarPrato = (req, res) => {
     });
 };
 
-module.exports = { listarPratos, criarPrato, editarPrato, deletarPrato };
+// POST /pratos/:id/visualizacao — rastreia interesse do cliente
+const registrarVisualizacao = (req, res) => {
+    const { id } = req.params;
+    const hoje = new Date().toISOString().split("T")[0];
+
+    db.query("UPDATE prato SET visualizacoes = visualizacoes + 1 WHERE id = ?", [id]);
+    
+    // Incrementa na tabela diária também
+    const sqlDiario = `
+        INSERT INTO prato_metricas_diarias (prato_id, data, visualizacoes)
+        VALUES (?, ?, 1)
+        ON DUPLICATE KEY UPDATE visualizacoes = visualizacoes + 1
+    `;
+    db.query(sqlDiario, [id, hoje]);
+
+    res.json({ sucesso: true });
+};
+
+// GET /pratos/matriz — resumo executivo da engenharia para o painel admin
+const obterMatrizEngenharia = (req, res) => {
+    db.query("SELECT * FROM prato ORDER BY categoria", (erro, pratos) => {
+        if (erro) return res.status(500).json({ erro: erro.message });
+
+        const porCategoria = {};
+        for (const p of pratos) {
+            const cat = p.categoria || "Cardápio";
+            if (!porCategoria[cat]) porCategoria[cat] = [];
+            porCategoria[cat].push(p);
+        }
+
+        let todosClassificados = [];
+        for (const cat of Object.keys(porCategoria)) {
+            const classificados = classificarPratos(porCategoria[cat]);
+            todosClassificados = todosClassificados.concat(classificados);
+        }
+
+        const estrelas       = todosClassificados.filter(p => p.classificacao === "estrela");
+        const vacasLeiteiras = todosClassificados.filter(p => p.classificacao === "vaca_leiteira");
+        const enigmas        = todosClassificados.filter(p => p.classificacao === "enigma");
+        const abacaxis       = todosClassificados.filter(p => p.classificacao === "abacaxi");
+        const semDados       = todosClassificados.filter(p => !p.classificacao);
+
+        res.json({
+            resumo: {
+                total: todosClassificados.length,
+                estrelas: estrelas.length,
+                vacas_leiteiras: vacasLeiteiras.length,
+                enigmas: enigmas.length,
+                abacaxis: abacaxis.length,
+                sem_dados: semDados.length
+            },
+            pratos: todosClassificados
+        });
+    });
+};
+
+module.exports = {
+    listarPratos,
+    criarPrato,
+    editarPrato,
+    deletarPrato,
+    registrarVisualizacao,
+    obterMatrizEngenharia
+};
