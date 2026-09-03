@@ -1,0 +1,335 @@
+================================================================
+  DOCUMENTAÇÃO - API DE CLIENTES (Express + MySQL)
+  Criado para fins de estudo
+================================================================
+
+
+================================================================
+  ÍNDICE
+================================================================
+  1. O que é essa API?
+  2. O que você precisa instalar
+  3. Criando o banco de dados no MySQL
+  4. Estrutura de pastas do projeto
+  5. Para que serve cada arquivo
+  6. Como instalar e rodar o projeto
+  7. Como testar as rotas da API
+  8. Conceitos importantes aprendidos
+
+
+================================================================
+  1. O QUE É ESSA API?
+================================================================
+
+  Essa é uma API REST simples feita com:
+    - Node.js  → ambiente para rodar JavaScript no servidor
+    - Express  → framework para criar rotas HTTP facilmente
+    - MySQL2   → biblioteca para conectar ao banco de dados MySQL
+
+  A API permite:
+    ✔ Listar todos os clientes cadastrados
+    ✔ Criar um novo cliente (informando nome e email)
+
+  Ela serve como base para entender como funciona uma API
+  conectada a um banco de dados real.
+
+
+================================================================
+  2. O QUE VOCÊ PRECISA INSTALAR
+================================================================
+
+  Antes de começar, você precisa ter instalado na sua máquina:
+
+  ┌─────────────────────────────────────────────────────────┐
+  │  PROGRAMA         │  PARA QUÊ SERVE                     │
+  ├─────────────────────────────────────────────────────────┤
+  │  Node.js          │  Rodar JavaScript fora do navegador │
+  │  MySQL            │  Banco de dados relacional           │
+  │  npm              │  Gerenciador de pacotes (vem c/ Node)│
+  └─────────────────────────────────────────────────────────┘
+
+  Downloads:
+    - Node.js:  https://nodejs.org  (baixe a versão LTS)
+    - MySQL:    https://dev.mysql.com/downloads/mysql/
+
+  Para verificar se já estão instalados, abra o terminal e digite:
+    node --version
+    npm --version
+    mysql --version
+
+
+================================================================
+  3. CRIANDO O BANCO DE DADOS NO MYSQL
+================================================================
+
+  Abra o MySQL Workbench ou o terminal do MySQL e execute os
+  comandos abaixo na ordem:
+
+  ──────────────────────────────────────────────────────────
+  PASSO 1 — Criar o banco de dados
+  ──────────────────────────────────────────────────────────
+
+    CREATE DATABASE minha_api;
+
+    → Isso cria um banco de dados chamado "minha_api".
+      Pense no banco de dados como uma "pasta" que vai
+      guardar todas as suas tabelas.
+
+  ──────────────────────────────────────────────────────────
+  PASSO 2 — Selecionar o banco para usar
+  ──────────────────────────────────────────────────────────
+
+    USE minha_api;
+
+    → Diz ao MySQL que os próximos comandos serão feitos
+      dentro do banco "minha_api".
+
+  ──────────────────────────────────────────────────────────
+  PASSO 3 — Criar a tabela de clientes
+  ──────────────────────────────────────────────────────────
+
+    CREATE TABLE cliente (
+        id    INT AUTO_INCREMENT PRIMARY KEY,
+        nome  VARCHAR(100) NOT NULL,
+        email VARCHAR(150) NOT NULL
+    );
+
+    → Explicação de cada coluna:
+
+      id    → número inteiro, gerado automaticamente
+               a cada novo cliente inserido (1, 2, 3...),
+               é a chave primária (identifica cada linha)
+
+      nome  → texto com até 100 caracteres, campo obrigatório
+
+      email → texto com até 150 caracteres, campo obrigatório
+
+  ──────────────────────────────────────────────────────────
+  PASSO 4 — (opcional) Inserir clientes de teste
+  ──────────────────────────────────────────────────────────
+
+    INSERT INTO cliente (nome, email)
+    VALUES ('João Silva', 'joao@email.com');
+
+    INSERT INTO cliente (nome, email)
+    VALUES ('Maria Souza', 'maria@email.com');
+
+  ──────────────────────────────────────────────────────────
+  PASSO 5 — (opcional) Verificar os dados inseridos
+  ──────────────────────────────────────────────────────────
+
+    SELECT * FROM cliente;
+
+    → Exibe todos os clientes da tabela.
+
+  ══════════════════════════════════════════════════════════
+  RESUMO — Cole tudo isso de uma vez no MySQL:
+  ══════════════════════════════════════════════════════════
+
+    CREATE DATABASE minha_api;
+    USE minha_api;
+    CREATE TABLE cliente (
+        id    INT AUTO_INCREMENT PRIMARY KEY,
+        nome  VARCHAR(100) NOT NULL,
+        email VARCHAR(150) NOT NULL
+    );
+
+  ══════════════════════════════════════════════════════════
+
+
+================================================================
+  4. ESTRUTURA DE PASTAS DO PROJETO
+================================================================
+
+  joao_explicacao/
+  │
+  ├── server.js                  → Ponto de entrada: inicia o servidor
+  ├── package.json               → Lista de dependências e scripts
+  │
+  └── src/
+      ├── app.js                 → Configuração do Express
+      │
+      ├── config/
+      │   └── database.js        → Conexão com o MySQL
+      │
+      ├── routes/
+      │   └── clienteRoutes.js   → Define as URLs disponíveis
+      │
+      └── controllers/
+          └── clienteController.js → Lógica de cada rota
+
+
+================================================================
+  5. PARA QUE SERVE CADA ARQUIVO
+================================================================
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  server.js                                               │
+  ├──────────────────────────────────────────────────────────┤
+  │  É o arquivo que você roda para iniciar tudo.            │
+  │  Ele importa o app.js e manda escutar na porta 3000.     │
+  └──────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  src/app.js                                              │
+  ├──────────────────────────────────────────────────────────┤
+  │  Cria o app do Express, registra middlewares (como o     │
+  │  express.json()) e conecta as rotas ao app.              │
+  └──────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  src/config/database.js                                  │
+  ├──────────────────────────────────────────────────────────┤
+  │  Faz a conexão com o MySQL. Exporta essa conexão para    │
+  │  que outros arquivos possam fazer queries no banco.       │
+  └──────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  src/routes/clienteRoutes.js                             │
+  ├──────────────────────────────────────────────────────────┤
+  │  Define quais URLs existem e qual função chamar:          │
+  │    GET  /clientes  → chama listarClientes                │
+  │    POST /clientes  → chama criarCliente                  │
+  └──────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  src/controllers/clienteController.js                    │
+  ├──────────────────────────────────────────────────────────┤
+  │  Contém a lógica de cada operação:                       │
+  │    listarClientes → faz SELECT no banco e retorna JSON   │
+  │    criarCliente   → valida dados e faz INSERT no banco   │
+  └──────────────────────────────────────────────────────────┘
+
+
+================================================================
+  6. COMO INSTALAR E RODAR O PROJETO
+================================================================
+
+  PASSO 1 — Abra o terminal na pasta do projeto:
+    cd C:\Users\vini\Documents\joao_explicacao
+
+  PASSO 2 — Instale as dependências:
+    npm install
+
+    → Isso vai baixar: express, mysql2 e nodemon
+      e criar a pasta node_modules/
+
+  PASSO 3 — Configure sua senha do MySQL:
+    Abra o arquivo: src/config/database.js
+    Encontre a linha:  password: "SUA_SENHA",
+    Troque pela sua senha real do MySQL.
+
+  PASSO 4 — Certifique-se de que criou o banco (ver seção 3)
+
+  PASSO 5 — Rode o servidor:
+    npm start          → modo normal
+    npm run dev        → modo desenvolvimento (reinicia automático)
+
+  PASSO 6 — Você verá no terminal:
+    ✅ MySQL conectado com sucesso!
+    🚀 API rodando em http://localhost:3000
+
+
+================================================================
+  7. COMO TESTAR AS ROTAS DA API
+================================================================
+
+  Você pode testar usando o Insomnia, Postman ou curl.
+
+  ──────────────────────────────────────────────────────────
+  ROTA 1 — Listar todos os clientes
+  ──────────────────────────────────────────────────────────
+
+    Método:  GET
+    URL:     http://localhost:3000/clientes
+
+    Resposta esperada:
+    [
+      { "id": 1, "nome": "João Silva", "email": "joao@email.com" },
+      { "id": 2, "nome": "Maria Souza", "email": "maria@email.com" }
+    ]
+
+  ──────────────────────────────────────────────────────────
+  ROTA 2 — Criar um novo cliente
+  ──────────────────────────────────────────────────────────
+
+    Método:  POST
+    URL:     http://localhost:3000/clientes
+    Body:    JSON (raw)
+
+    {
+      "nome": "Carlos Lima",
+      "email": "carlos@email.com"
+    }
+
+    Resposta esperada:
+    {
+      "mensagem": "Cliente criado com sucesso!",
+      "id": 3
+    }
+
+  ──────────────────────────────────────────────────────────
+  Testando com curl (pelo terminal):
+  ──────────────────────────────────────────────────────────
+
+    Listar:
+    curl http://localhost:3000/clientes
+
+    Criar:
+    curl -X POST http://localhost:3000/clientes ^
+         -H "Content-Type: application/json" ^
+         -d "{\"nome\": \"Carlos\", \"email\": \"carlos@email.com\"}"
+
+
+================================================================
+  8. CONCEITOS IMPORTANTES APRENDIDOS
+================================================================
+
+  API REST
+  ─────────────────────────────────────────────────────────
+  API = Application Programming Interface
+  REST = padrão de comunicação via HTTP usando verbos:
+    GET    → buscar dados
+    POST   → criar dados
+    PUT    → atualizar dados
+    DELETE → deletar dados
+
+
+  Middleware
+  ─────────────────────────────────────────────────────────
+  Função que roda ANTES de chegar na sua rota.
+  Exemplo: express.json() transforma o body da requisição
+  em objeto JavaScript antes de chegar no seu controller.
+
+
+  MVC (Model - View - Controller)
+  ─────────────────────────────────────────────────────────
+  Padrão de organização de código usado neste projeto:
+    Model      → representa os dados (tabela do banco)
+    View       → o que o usuário vê (aqui é o JSON retornado)
+    Controller → a lógica entre a rota e o banco
+
+
+  Query parametrizada (evita SQL Injection)
+  ─────────────────────────────────────────────────────────
+  Em vez de escrever:
+    "INSERT INTO cliente VALUES ('" + nome + "', ...)"
+
+  Usamos:
+    "INSERT INTO cliente VALUES (?, ?)"
+    db.query(sql, [nome, email])
+
+  Os ? são preenchidos de forma segura pelo mysql2,
+  impedindo ataques de SQL Injection.
+
+
+  require / module.exports
+  ─────────────────────────────────────────────────────────
+  São a forma do Node.js compartilhar código entre arquivos:
+    module.exports = algo   → exporta de um arquivo
+    const algo = require("./caminho")  → importa em outro
+
+
+================================================================
+  FIM DA DOCUMENTAÇÃO
+================================================================

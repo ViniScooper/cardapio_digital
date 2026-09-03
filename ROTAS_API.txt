@@ -1,0 +1,360 @@
+================================================================
+  DOCUMENTAÇÃO DAS ROTAS DA API — Restaurante
+  Backend: http://localhost:3001
+  Frontend: http://localhost:5173
+================================================================
+
+
+================================================================
+  BANCO DE DADOS — CRIAR ANTES DE RODAR O PROJETO
+================================================================
+
+  Execute no MySQL Workbench ou terminal do MySQL:
+
+  ──────────────────────────────────────────────────────────
+  1. Criar banco e tabelas:
+  ──────────────────────────────────────────────────────────
+
+    CREATE DATABASE restaurante;
+
+    USE restaurante;
+
+    CREATE TABLE usuario (
+        id       INT AUTO_INCREMENT PRIMARY KEY,
+        nome     VARCHAR(100)  NOT NULL,
+        email    VARCHAR(150)  NOT NULL UNIQUE,
+        senha    VARCHAR(255)  NOT NULL,
+        role     ENUM('admin', 'user') DEFAULT 'user'
+    );
+
+    CREATE TABLE prato (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        nome       VARCHAR(100)   NOT NULL,
+        descricao  TEXT,
+        preco      DECIMAL(10, 2) NOT NULL,
+        criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+  ──────────────────────────────────────────────────────────
+  Explicação das colunas:
+
+  Tabela usuario:
+    id      → gerado automaticamente
+    nome    → nome do usuário
+    email   → único no banco (não pode repetir)
+    senha   → armazenada como hash bcrypt (nunca texto puro)
+    role    → "admin" ou "user" (padrão: user)
+
+  Tabela prato:
+    id        → gerado automaticamente
+    nome      → nome do prato
+    descricao → descrição opcional
+    preco     → valor com 2 casas decimais (ex: 29.90)
+    criado_em → data/hora de criação automática
+  ──────────────────────────────────────────────────────────
+
+
+================================================================
+  COMO RODAR O PROJETO
+================================================================
+
+  ⚠️  Lembre de colocar sua senha do MySQL em:
+      backend/src/config/database.js  →  password: "SUA_SENHA"
+
+  ── Terminal 1 (Backend): ──────────────────────────────────
+
+    cd backend
+    npm install
+    npm run dev
+
+    → API rodando em http://localhost:3001
+
+  ── Terminal 2 (Frontend): ─────────────────────────────────
+
+    cd frontend
+    npm install
+    npm run dev
+
+    → Site rodando em http://localhost:5173
+
+
+================================================================
+  ROTAS DA API
+================================================================
+
+  BASE URL: http://localhost:3001
+
+  Legenda:
+    🔓 = público (sem autenticação)
+    🔐 = requer token JWT no header
+    👑 = requer token JWT + ser admin
+
+
+================================================================
+  BLOCO 1 — AUTENTICAÇÃO  (/auth)
+================================================================
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  POST /auth/registrar                            🔓      │
+  ├──────────────────────────────────────────────────────────┤
+  │  Cria um novo usuário (admin ou user)                    │
+  │                                                          │
+  │  Body (JSON):                                            │
+  │  {                                                       │
+  │    "nome":  "João Silva",                                │
+  │    "email": "joao@email.com",                            │
+  │    "senha": "minhasenha123",                             │
+  │    "role":  "admin"          ← "admin" ou "user"         │
+  │  }                                                       │
+  │                                                          │
+  │  Resposta de sucesso (201):                              │
+  │  {                                                       │
+  │    "mensagem": "Usuário cadastrado como admin!",         │
+  │    "id": 1                                               │
+  │  }                                                       │
+  │                                                          │
+  │  Possíveis erros:                                        │
+  │    400 → campos obrigatórios faltando                    │
+  │    409 → email já cadastrado                             │
+  └──────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  POST /auth/login                                🔓      │
+  ├──────────────────────────────────────────────────────────┤
+  │  Autentica o usuário e retorna o token JWT               │
+  │                                                          │
+  │  Body (JSON):                                            │
+  │  {                                                       │
+  │    "email": "joao@email.com",                            │
+  │    "senha": "minhasenha123"                              │
+  │  }                                                       │
+  │                                                          │
+  │  Resposta de sucesso (200):                              │
+  │  {                                                       │
+  │    "mensagem": "Login realizado com sucesso!",           │
+  │    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI...",           │
+  │    "usuario": {                                          │
+  │      "id": 1,                                            │
+  │      "nome": "João Silva",                               │
+  │      "email": "joao@email.com",                          │
+  │      "role": "admin"                                     │
+  │    }                                                     │
+  │  }                                                       │
+  │                                                          │
+  │  ⚠️  Guarde o "token" — ele é necessário nas            │
+  │     rotas protegidas! Válido por 8 horas.                │
+  │                                                          │
+  │  Possíveis erros:                                        │
+  │    400 → email ou senha não enviados                     │
+  │    401 → email ou senha incorretos                       │
+  └──────────────────────────────────────────────────────────┘
+
+
+================================================================
+  BLOCO 2 — PRATOS  (/pratos)
+================================================================
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  GET /pratos                                     🔓      │
+  ├──────────────────────────────────────────────────────────┤
+  │  Lista todos os pratos do cardápio                       │
+  │                                                          │
+  │  Sem body. Sem autenticação.                             │
+  │                                                          │
+  │  Resposta de sucesso (200):                              │
+  │  [                                                       │
+  │    {                                                     │
+  │      "id": 1,                                            │
+  │      "nome": "Pizza Calabresa",                          │
+  │      "descricao": "Calabresa, queijo e molho",           │
+  │      "preco": "29.90",                                   │
+  │      "criado_em": "2024-01-15T18:30:00.000Z"            │
+  │    },                                                    │
+  │    ...                                                   │
+  │  ]                                                       │
+  └──────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  POST /pratos                                    👑      │
+  ├──────────────────────────────────────────────────────────┤
+  │  Cadastra um novo prato (apenas admin)                   │
+  │                                                          │
+  │  Header obrigatório:                                     │
+  │    Authorization: Bearer SEU_TOKEN_AQUI                  │
+  │                                                          │
+  │  Body (JSON):                                            │
+  │  {                                                       │
+  │    "nome":     "Pizza Calabresa",                        │
+  │    "descricao": "Com calabresa e queijo",  ← opcional    │
+  │    "preco":    29.90                                     │
+  │  }                                                       │
+  │                                                          │
+  │  Resposta de sucesso (201):                              │
+  │  {                                                       │
+  │    "mensagem": "Prato cadastrado com sucesso!",          │
+  │    "id": 1                                               │
+  │  }                                                       │
+  │                                                          │
+  │  Possíveis erros:                                        │
+  │    400 → nome ou preço faltando / preço inválido         │
+  │    401 → sem token                                       │
+  │    403 → token inválido ou usuário não é admin           │
+  └──────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────┐
+  │  DELETE /pratos/:id                              👑      │
+  ├──────────────────────────────────────────────────────────┤
+  │  Remove um prato pelo ID (apenas admin)                  │
+  │                                                          │
+  │  Header obrigatório:                                     │
+  │    Authorization: Bearer SEU_TOKEN_AQUI                  │
+  │                                                          │
+  │  Exemplo de URL:                                         │
+  │    DELETE http://localhost:3001/pratos/3                 │
+  │                                                          │
+  │  Resposta de sucesso (200):                              │
+  │  {                                                       │
+  │    "mensagem": "Prato removido com sucesso!"             │
+  │  }                                                       │
+  │                                                          │
+  │  Possíveis erros:                                        │
+  │    401 → sem token                                       │
+  │    403 → não é admin                                     │
+  │    404 → prato não encontrado                            │
+  └──────────────────────────────────────────────────────────┘
+
+
+================================================================
+  COMO USAR O TOKEN (autenticação)
+================================================================
+
+  Após o login, você recebe um "token". Use-o em toda
+  requisição protegida no header HTTP:
+
+    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI...
+
+  O token expira em 8 horas. Após isso, faça login novamente.
+
+
+================================================================
+  EXEMPLOS PRÁTICOS — TESTANDO COM CURL (terminal)
+================================================================
+
+  ── 1. Criar conta admin ──────────────────────────────────
+
+  curl -X POST http://localhost:3001/auth/registrar ^
+       -H "Content-Type: application/json" ^
+       -d "{\"nome\":\"Joao Admin\",\"email\":\"admin@restaurante.com\",\"senha\":\"senha123\",\"role\":\"admin\"}"
+
+  ── 2. Fazer login ────────────────────────────────────────
+
+  curl -X POST http://localhost:3001/auth/login ^
+       -H "Content-Type: application/json" ^
+       -d "{\"email\":\"admin@restaurante.com\",\"senha\":\"senha123\"}"
+
+  → Guarde o valor do campo "token" da resposta!
+
+  ── 3. Listar pratos (público) ────────────────────────────
+
+  curl http://localhost:3001/pratos
+
+  ── 4. Cadastrar prato (admin) ────────────────────────────
+
+  curl -X POST http://localhost:3001/pratos ^
+       -H "Content-Type: application/json" ^
+       -H "Authorization: Bearer SEU_TOKEN_AQUI" ^
+       -d "{\"nome\":\"Pizza Calabresa\",\"descricao\":\"Calabresa e queijo\",\"preco\":29.90}"
+
+  ── 5. Deletar prato de ID 1 (admin) ─────────────────────
+
+  curl -X DELETE http://localhost:3001/pratos/1 ^
+       -H "Authorization: Bearer SEU_TOKEN_AQUI"
+
+
+================================================================
+  EXEMPLOS — TESTANDO COM INSOMNIA / POSTMAN
+================================================================
+
+  Passo a passo para criar um prato pelo Insomnia:
+
+  1. Crie uma requisição POST
+  2. URL: http://localhost:3001/auth/login
+  3. Body → JSON:
+       { "email": "admin@restaurante.com", "senha": "senha123" }
+  4. Envie e copie o "token" da resposta
+
+  5. Crie outra requisição POST
+  6. URL: http://localhost:3001/pratos
+  7. Headers → adicione:
+       Key:   Authorization
+       Value: Bearer SEU_TOKEN_AQUI
+  8. Body → JSON:
+       {
+         "nome": "Pizza 4 Queijos",
+         "descricao": "Quatro tipos de queijo",
+         "preco": 35.00
+       }
+  9. Envie → o prato aparecerá no site!
+
+
+================================================================
+  ESTRUTURA DE PASTAS DO PROJETO
+================================================================
+
+  joao_explicacao/
+  │
+  ├── backend/
+  │   ├── server.js                      → inicia o servidor
+  │   ├── package.json
+  │   └── src/
+  │       ├── app.js                     → configura Express + rotas
+  │       ├── config/
+  │       │   └── database.js            → conexão MySQL
+  │       ├── middleware/
+  │       │   └── authMiddleware.js      → verifica token JWT
+  │       ├── routes/
+  │       │   ├── authRoutes.js          → /auth/registrar e /auth/login
+  │       │   └── pratoRoutes.js         → /pratos (GET, POST, DELETE)
+  │       └── controllers/
+  │           ├── authController.js      → lógica de registro e login
+  │           └── pratoController.js     → lógica dos pratos
+  │
+  └── frontend/
+      ├── index.html
+      ├── vite.config.js
+      ├── package.json
+      └── src/
+          ├── main.jsx                   → entrada do React
+          ├── App.jsx                    → roteamento (React Router)
+          ├── index.css                  → estilos globais
+          ├── services/
+          │   └── api.js                 → Axios com token automático
+          ├── components/
+          │   └── Navbar.jsx             → barra de navegação
+          └── pages/
+              ├── Home.jsx               → cardápio público
+              ├── Login.jsx              → login + cadastro admin
+              └── Admin.jsx              → painel do administrador
+
+
+================================================================
+  FLUXO DO SISTEMA
+================================================================
+
+  Usuário comum:
+    1. Acessa http://localhost:5173
+    2. Vê o cardápio com todos os pratos
+    3. Não precisa login para ver
+
+  Administrador:
+    1. Acessa /login e cria conta com role "admin"
+    2. Faz login → recebe token JWT
+    3. É redirecionado para /admin (painel)
+    4. Adiciona um prato (nome, descrição, preço)
+    5. Clica "Confirmar e Publicar"
+    6. O prato aparece imediatamente no cardápio público
+
+
+================================================================
+  FIM DO DOCUMENTO
+================================================================
