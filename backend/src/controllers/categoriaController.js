@@ -4,9 +4,9 @@
 
 const db = require("../config/database");
 
-// GET /categorias — público (usado no form e na home)
+// GET /categorias — público (usado no form e na home com ordenação por 'ordem')
 const listarCategorias = (req, res) => {
-    db.query("SELECT * FROM categoria ORDER BY ordem ASC, nome ASC", (erro, resultado) => {
+    db.query("SELECT * FROM categoria ORDER BY ordem ASC, id ASC", (erro, resultado) => {
         if (erro) return res.status(500).json({ erro: erro.message });
         res.json(resultado);
     });
@@ -39,6 +39,29 @@ const criarCategoria = (req, res) => {
     });
 };
 
+// PUT /categorias/reordenar — admin (atualiza a ordem de exibição no cardápio)
+const reordenarCategorias = async (req, res) => {
+    const { categorias } = req.body; // Array de { id, ordem }
+
+    if (!Array.isArray(categorias)) {
+        return res.status(400).json({ erro: "Array de categorias é obrigatório." });
+    }
+
+    try {
+        for (const cat of categorias) {
+            await new Promise((resolve, reject) => {
+                db.query("UPDATE categoria SET ordem = ? WHERE id = ?", [cat.ordem, cat.id], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+        }
+        res.json({ mensagem: "Ordem das categorias atualizada com sucesso!" });
+    } catch (erro) {
+        res.status(500).json({ erro: erro.message });
+    }
+};
+
 // DELETE /categorias/:id — admin
 const deletarCategoria = (req, res) => {
     const { id } = req.params;
@@ -68,4 +91,4 @@ const deletarCategoria = (req, res) => {
     );
 };
 
-module.exports = { listarCategorias, criarCategoria, deletarCategoria };
+module.exports = { listarCategorias, criarCategoria, reordenarCategorias, deletarCategoria };

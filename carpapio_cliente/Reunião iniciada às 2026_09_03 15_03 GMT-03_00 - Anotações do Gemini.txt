@@ -1,0 +1,56 @@
+﻿set. 3, 2026
+Reunião em 3 de set. de 2026 às 15:03 GMT-03:00
+Registros da reunião Transcrição 
+
+
+
+
+Resumo
+Reunião de alinhamento sobre funcionalidades do sistema, estratégias de cardápio e fluxo de pedidos via WhatsApp.
+
+Funcionalidades do sistema
+Interface permite gestão completa de cardápio, custos e promoções. Ferramentas analíticas monitoram desempenho e lucratividade dos pratos.
+
+Estratégia de cardápio
+Definição de hierarquia de exibição de pratos prioriza sugestões lucrativas e organizadas. Decisão adotada permite autonomia na ordenação de itens via sistema.
+
+Integração e fluxo
+Sistema de pedidos simplificado utiliza carrinho com finalização via WhatsApp. Integração com avaliações do Google visa aumentar visibilidade e marketing digital.
+
+
+
+
+Decisões
+Alinhada
+* Estratégia de ordenação do cardápio definida A ordenação dos itens do cardápio será configurada para seguir a sequência específica solicitada pelo cliente, priorizando a função de venda sugestiva dos pratos.
+* Integração de avaliações do Google definida A funcionalidade de avaliações do Google será integrada ao sistema para auxiliar na atração de clientes e melhoria de métricas.
+* Sistema de pedidos via WhatsApp definido O método de finalização de pedidos será realizado via WhatsApp, consolidando os itens do carrinho e enviando a mensagem pronta ao estabelecimento, em substituição a gateways de pagamento complexos.
+* Estratégia de hospedagem para testes definida A hospedagem inicial do sistema será realizada no servidor do desenvolvedor para permitir testes e validações pelo cliente antes da contratação de hospedagem definitiva.
+
+
+
+
+Próximas etapas
+* [Vinicius Lorenzo] Ajustar cardápio: Organizar a sequência de exibição dos itens conforme solicitado.
+* [Vinicius Lorenzo] Integrar avaliações: Implementar suporte para feedback do Google visando aumentar a visibilidade.
+* [Vinicius Lorenzo] Implementar carrinho: Adicionar funcionalidade de pedidos via WhatsApp com envio de mensagem automática.
+* [Vinicius Lorenzo] Implantar sistema: Finalizar a configuração do site em servidor e enviar link de teste.
+* [Vinicius Lorenzo] Enviar opções: Apresentar alternativas de serviços de hospedagem para decisão do cliente.
+* [Boteco do Sivirino] Atualizar imagens: Substituir e fornecer as fotografias dos pratos no sistema.
+
+
+
+
+Detalhes
+* Funcionalidades do Sistema e Engenharia de Cardápio: Vinicius Lorenzo apresenta a interface para gestão do cardápio, que permite o cadastro de pratos, inserção de imagens, custos de produção e categorias, além da inclusão de selos como "recomendado do chefe" ou "favorito da casa". O sistema inclui ferramentas de "engenharia de cardápio" para analisar a lucratividade, identificar pratos com alto ou baixo volume de vendas e monitorar métricas de desempenho baseadas em cliques (00:00:02). Além disso, o sistema permite o cadastro de promoções para o "happy hour", com definição de dias da semana e horários específicos (00:01:17).
+* Implementação de QR Code e Sequenciamento: Vinicius Lorenzo demonstra a funcionalidade de geração de QR Codes, que serão disponibilizados nas mesas dos clientes para acesso ao cardápio. Boteco do Sivirino solicita que os itens no cardápio sejam organizados em uma sequência específica, um requisito discutido anteriormente para garantir uma apresentação mais lógica e eficiente (00:02:28).
+* Estratégia de Vendas e Organização do Cardápio: Boteco do Sivirino enfatiza que o cardápio deve atuar como um vendedor, priorizando sugestões do chefe e pratos mais vendidos para facilitar a escolha do cliente e evitar a fadiga de decisão (00:03:31). Eles concordam que o sistema deve permitir que Boteco do Sivirino altere a ordem de exibição dos itens e categorias de forma autônoma, garantindo a flexibilidade necessária para ajustar a apresentação do cardápio (00:05:21).
+* Integração com Avaliações do Google: Boteco do Sivirino sugere a integração de um sistema de avaliação do Google, argumentando que essa prática auxilia nas campanhas de marketing e Google Ads, além de atrair novos clientes para o restaurante ao aumentar a visibilidade e prova social, apesar da exposição a avaliações críticas dos usuários (00:05:58).
+* Sistema de Pedidos e Hospedagem: Em relação à hospedagem do site, Vinicius Lorenzo propõe realizar o processo em seu servidor para que Boteco do Sivirino possa testar o funcionamento, discutindo posteriormente opções de planos de hospedagem (00:07:02) (00:10:18). Sobre o fluxo de pedidos, decidem não utilizar um sistema de pagamento complexo neste momento; será implementado um carrinho que finaliza o pedido via WhatsApp, permitindo que o cliente envie os itens escolhidos diretamente para a equipe do restaurante (00:08:20).
+* Processo de Melhoria Contínua: Boteco do Sivirino e Vinicius Lorenzo definem que o desenvolvimento seguirá um modelo iterativo, no qual Boteco do Sivirino testará a ferramenta e identificará necessidades de ajustes com base no uso diário, replicando o método utilizado em sistemas de automação comercial que Boteco do Sivirino empregou no passado (00:11:32).
+
+
+
+
+Revise as anotações do Gemini para checar se estão corretas. Confira dicas e saiba como o Gemini faz anotações
+Como está a qualidade de destas observações? Responda a uma breve pesquisa para nos dar seu feedback, incluindo o quanto as observações foram úteis para o que você precisa.

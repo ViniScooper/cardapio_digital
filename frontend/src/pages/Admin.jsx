@@ -215,6 +215,29 @@ export default function Admin() {
         }
     };
 
+    const handleMoverCategoria = async (index, direcao) => {
+        const novoIndex = index + direcao;
+        if (novoIndex < 0 || novoIndex >= categorias.length) return;
+
+        const novaLista = [...categorias];
+        const [movida] = novaLista.splice(index, 1);
+        novaLista.splice(novoIndex, 0, movida);
+
+        // Atualiza ordens sequencialmente (1, 2, 3...)
+        const payload = novaLista.map((c, i) => ({ id: c.id, ordem: i + 1 }));
+
+        // Atualização otimista imediata na tela
+        setCategorias(novaLista);
+
+        try {
+            await api.put("/categorias/reordenar", { categorias: payload });
+            setMensagem("Ordem das seções do cardápio atualizada!");
+        } catch (err) {
+            setErro("Erro ao salvar ordem das categorias.");
+            carregarTudo();
+        }
+    };
+
     const handleDeletarCategoria = async (id, nome) => {
         if (!window.confirm(`Remover a categoria "${nome}"?`)) return;
         try {
@@ -805,27 +828,97 @@ export default function Admin() {
 
                     {/* Lista de categorias */}
                     <div className="admin-card" style={styles.card}>
-                        <h2 className="admin-card-titulo" style={styles.cardTitulo}>📋 Categorias ({categorias.length})</h2>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                            <div>
+                                <h2 className="admin-card-titulo" style={{ ...styles.cardTitulo, margin: 0 }}>
+                                    📋 Ordem das Categorias no Cardápio ({categorias.length})
+                                </h2>
+                                <p style={{ fontSize: "0.82rem", color: "#888", marginTop: "0.2rem" }}>
+                                    Use as setas ⬆️ ⬇️ para escolher qual categoria aparece primeiro no cardápio público dos clientes!
+                                </p>
+                            </div>
+                        </div>
+
                         <div style={styles.lista}>
-                            {categorias.map((cat) => {
+                            {categorias.map((cat, index) => {
                                 const qtd = pratos.filter(p => p.categoria === cat.nome).length;
                                 return (
-                                    <div key={cat.id} className="admin-cat-item" style={styles.catItem}>
-                                        <div style={styles.catIconeBox}>{cat.icone}</div>
-                                        <div style={styles.itemInfo}>
-                                            <p style={styles.itemNome}>{cat.nome}</p>
-                                            <p style={{ fontSize: "0.75rem", color: "#aaa", marginTop: "0.1rem" }}>
-                                                {qtd} {qtd === 1 ? "prato" : "pratos"}
-                                            </p>
+                                    <div key={cat.id} className="admin-cat-item" style={{ ...styles.catItem, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.8rem" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                                            <span style={{
+                                                background: "#111",
+                                                color: "#e8b84b",
+                                                width: "24px",
+                                                height: "24px",
+                                                borderRadius: "50%",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: "0.75rem",
+                                                fontWeight: "700"
+                                            }}>
+                                                {index + 1}
+                                            </span>
+                                            <div style={styles.catIconeBox}>{cat.icone}</div>
+                                            <div style={styles.itemInfo}>
+                                                <p style={{ ...styles.itemNome, margin: 0 }}>{cat.nome}</p>
+                                                <p style={{ fontSize: "0.75rem", color: "#aaa", margin: "0.1rem 0 0" }}>
+                                                    {qtd} {qtd === 1 ? "prato cadastrado" : "pratos cadastrados"}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <button
-                                            className="admin-btn-action"
-                                            style={{ ...styles.btnDel, ...(qtd > 0 ? { opacity: 0.4, cursor: "not-allowed" } : {}) }}
-                                            onClick={() => qtd === 0 && handleDeletarCategoria(cat.id, cat.nome)}
-                                            title={qtd > 0 ? `${qtd} prato(s) usam esta categoria` : "Remover categoria"}
-                                        >
-                                            🗑️
-                                        </button>
+
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                            {/* Botão Subir */}
+                                            <button
+                                                className="admin-btn-action"
+                                                style={{
+                                                    background: index === 0 ? "#eee" : "#f0ebe3",
+                                                    color: index === 0 ? "#ccc" : "#333",
+                                                    border: "1px solid #ddd",
+                                                    borderRadius: "8px",
+                                                    padding: "0.35rem 0.6rem",
+                                                    cursor: index === 0 ? "not-allowed" : "pointer",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: "700"
+                                                }}
+                                                disabled={index === 0}
+                                                onClick={() => handleMoverCategoria(index, -1)}
+                                                title="Mover para cima no cardápio"
+                                            >
+                                                ▲
+                                            </button>
+
+                                            {/* Botão Descer */}
+                                            <button
+                                                className="admin-btn-action"
+                                                style={{
+                                                    background: index === categorias.length - 1 ? "#eee" : "#f0ebe3",
+                                                    color: index === categorias.length - 1 ? "#ccc" : "#333",
+                                                    border: "1px solid #ddd",
+                                                    borderRadius: "8px",
+                                                    padding: "0.35rem 0.6rem",
+                                                    cursor: index === categorias.length - 1 ? "not-allowed" : "pointer",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: "700"
+                                                }}
+                                                disabled={index === categorias.length - 1}
+                                                onClick={() => handleMoverCategoria(index, 1)}
+                                                title="Mover para baixo no cardápio"
+                                            >
+                                                ▼
+                                            </button>
+
+                                            {/* Botão Remover */}
+                                            <button
+                                                className="admin-btn-action"
+                                                style={{ ...styles.btnDel, ...(qtd > 0 ? { opacity: 0.4, cursor: "not-allowed" } : {}) }}
+                                                onClick={() => qtd === 0 && handleDeletarCategoria(cat.id, cat.nome)}
+                                                title={qtd > 0 ? `${qtd} prato(s) usam esta categoria` : "Remover categoria"}
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
                                     </div>
                                 );
                             })}
