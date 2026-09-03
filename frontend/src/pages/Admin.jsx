@@ -60,6 +60,17 @@ export default function Admin() {
     const [catIcone,   setCatIcone]   = useState("🍴");
     const [enviandoCat,setEnviandoCat]= useState(false);
 
+    // Estados de Selos Personalizados (Flags)
+    const [selos,        setSelos]        = useState([]);
+    const [seloNome,     setSeloNome]     = useState("");
+    const [seloIcone,    setSeloIcone]    = useState("🔥");
+    const [seloCor,      setSeloCor]      = useState("#e8b84b");
+    const [enviandoSelo, setEnviandoSelo] = useState(false);
+
+    // Estados da aba Engenharia de Cardápio
+    const [buscaEng,        setBuscaEng]        = useState("");
+    const [filtroQuadrante, setFiltroQuadrante] = useState("todos");
+
     // Configuração de Happy Hour
     const [configHH,   setConfigHH]   = useState({
         hh_ativo: true,
@@ -77,11 +88,13 @@ export default function Admin() {
             api.get("/pratos"),
             api.get("/categorias"),
             api.get("/config"),
+            api.get("/selos").catch(() => ({ data: [] })),
             api.get("/pratos/matriz").catch(() => ({ data: null }))
         ])
-            .then(([rPratos, rCats, rConfig, rMatriz]) => {
+            .then(([rPratos, rCats, rConfig, rSelos, rMatriz]) => {
                 setPratos(rPratos.data);
                 setCategorias(rCats.data);
+                if (rSelos?.data) setSelos(rSelos.data);
                 if (rMatriz?.data) setMatrizEng(rMatriz.data);
                 if (rConfig?.data) {
                     setConfigHH({
@@ -213,6 +226,34 @@ export default function Admin() {
         }
     };
 
+    const handleCriarSelo = async (e) => {
+        e.preventDefault();
+        if (!seloNome.trim()) return;
+        setErro(""); setMensagem(""); setEnviandoSelo(true);
+        try {
+            await api.post("/selos", { nome: seloNome.trim(), icone: seloIcone, cor: seloCor });
+            setMensagem(`Selo "${seloIcone} ${seloNome}" criado com sucesso!`);
+            setSeloNome("");
+            setSeloIcone("🔥");
+            carregarTudo();
+        } catch (err) {
+            setErro(err.response?.data?.erro || "Erro ao criar selo.");
+        } finally {
+            setEnviandoSelo(false);
+        }
+    };
+
+    const handleDeletarSelo = async (id, nome) => {
+        if (!window.confirm(`Remover o selo "${nome}"?`)) return;
+        try {
+            await api.delete(`/selos/${id}`);
+            setMensagem(`Selo "${nome}" removido.`);
+            carregarTudo();
+        } catch (err) {
+            setErro(err.response?.data?.erro || "Erro ao remover selo.");
+        }
+    };
+
     const handleSalvarConfigHH = async (e) => {
         e.preventDefault();
         setErro("");
@@ -254,24 +295,48 @@ export default function Admin() {
 
                 {/* Estatísticas */}
                 <div className="admin-stats" style={styles.stats}>
-                    {[
-                        { num: pratos.length,                           label: "Pratos" },
-                        { num: categorias.length,                       label: "Categorias" },
-                        { num: pratos.filter(p => p.happy_hour).length, label: "Happy Hour" },
-                        { num: pratos.length > 0 ? `R$ ${Math.min(...pratos.map(p => parseFloat(p.preco))).toFixed(2).replace(".", ",")}` : "—", label: "A partir de" },
-                    ].map((s, i) => (
-                        <div key={i} className="admin-stat-card" style={styles.statCard}>
-                            <span className="admin-stat-num" style={styles.statNum}>{s.num}</span>
-                            <span className="admin-stat-label" style={styles.statLabel}>{s.label}</span>
-                        </div>
-                    ))}
+                    {(() => {
+                        const totalPratos = pratos.length;
+                        const comCusto = pratos.filter(p => p.custo && parseFloat(p.custo) > 0).length;
+                        const pctCusto = totalPratos > 0 ? Math.round((comCusto / totalPratos) * 100) : 0;
+
+                        return [
+                            { num: totalPratos,                             label: "Pratos",         action: () => setAba("pratos") },
+                            { num: categorias.length,                       label: "Categorias",     action: () => setAba("categorias") },
+                            { num: pratos.filter(p => p.happy_hour).length, label: "Happy Hour",     action: () => setAba("happyhour") },
+                            { 
+                                num: `${pctCusto}%`, 
+                                label: `Custos Cadastrados (${comCusto}/${totalPratos})`, 
+                                action: () => setAba("engenharia"),
+                                destaque: pctCusto < 50
+                            },
+                        ].map((s, i) => (
+                            <div 
+                                key={i} 
+                                className="admin-stat-card" 
+                                style={{ 
+                                    ...styles.statCard, 
+                                    cursor: "pointer",
+                                    ...(s.destaque ? { borderTop: "2px solid #e8b84b" } : {})
+                                }}
+                                onClick={s.action}
+                                title="Clique para abrir esta seção"
+                            >
+                                <span className="admin-stat-num" style={{ ...styles.statNum, ...(s.destaque ? { color: "#e8b84b" } : {}) }}>
+                                    {s.num}
+                                </span>
+                                <span className="admin-stat-label" style={styles.statLabel}>{s.label}</span>
+                            </div>
+                        ));
+                    })()}
                 </div>
 
                 {/* Abas */}
                 <div className="admin-abas" style={styles.abas}>
                     <button onClick={() => setAba("pratos")}     className="admin-aba" style={{ ...styles.aba, ...(aba === "pratos"     ? styles.abaAtiva : {}) }}>🍽️ Pratos</button>
                     <button onClick={() => setAba("engenharia")} className="admin-aba" style={{ ...styles.aba, ...(aba === "engenharia" ? styles.abaAtiva : {}) }}>📊 Engenharia</button>
-                    <button onClick={() => setAba("categorias")} className="admin-aba" style={{ ...styles.aba, ...(aba === "categorias" ? styles.abaAtiva : {}) }}>🏷️ Categorias</button>
+                    <button onClick={() => setAba("selos")}      className="admin-aba" style={{ ...styles.aba, ...(aba === "selos"      ? styles.abaAtiva : {}) }}>🏷️ Selos / Flags</button>
+                    <button onClick={() => setAba("categorias")} className="admin-aba" style={{ ...styles.aba, ...(aba === "categorias" ? styles.abaAtiva : {}) }}>📂 Categorias</button>
                     <button onClick={() => setAba("happyhour")}  className="admin-aba" style={{ ...styles.aba, ...(aba === "happyhour"  ? styles.abaAtiva : {}) }}>⚡ Happy Hour</button>
                     <button onClick={() => setAba("qrcode")}     className="admin-aba" style={{ ...styles.aba, ...(aba === "qrcode"     ? styles.abaAtiva : {}) }}>📱 QR Code</button>
                 </div>
@@ -321,59 +386,152 @@ export default function Admin() {
                             </div>
                         )}
 
-                        {/* Tabela Interativa de Itens */}
-                        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: "700", marginBottom: "1rem" }}>
-                            📋 Painel Estratégico de Pratos ({pratos.length} itens cadastrados)
-                        </h3>
-                        <div style={{ overflowX: "auto" }}>
-                            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
-                                <thead>
-                                    <tr style={{ background: "#f7f3ed", borderBottom: "2px solid #e0d9d0" }}>
-                                        <th style={{ padding: "0.8rem" }}>Prato</th>
-                                        <th style={{ padding: "0.8rem" }}>Categoria</th>
-                                        <th style={{ padding: "0.8rem" }}>Preço</th>
-                                        <th style={{ padding: "0.8rem" }}>Custo (CMV)</th>
-                                        <th style={{ padding: "0.8rem" }}>Margem</th>
-                                        <th style={{ padding: "0.8rem" }}>Classificação</th>
-                                        <th style={{ padding: "0.8rem" }}>Selo Ativo</th>
-                                        <th style={{ padding: "0.8rem", textAlign: "right" }}>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pratos.map((p) => {
-                                        const margem = (p.preco && p.custo) ? (((p.preco - p.custo) / p.preco) * 100).toFixed(1) : null;
-                                        return (
-                                            <tr key={p.id} style={{ borderBottom: "1px solid #eee" }}>
-                                                <td style={{ padding: "0.8rem", fontWeight: "600" }}>{p.nome}</td>
-                                                <td style={{ padding: "0.8rem", color: "#777" }}>{p.categoria}</td>
-                                                <td style={{ padding: "0.8rem", fontWeight: "700" }}>R$ {parseFloat(p.preco).toFixed(2).replace(".", ",")}</td>
-                                                <td style={{ padding: "0.8rem", color: p.custo ? "#333" : "#bbb" }}>
-                                                    {p.custo ? `R$ ${parseFloat(p.custo).toFixed(2).replace(".", ",")}` : "Sem custo"}
-                                                </td>
-                                                <td style={{ padding: "0.8rem", fontWeight: "600", color: margem > 55 ? "#2e7d32" : margem ? "#c0392b" : "#aaa" }}>
-                                                    {margem ? `${margem}%` : "—"}
-                                                </td>
-                                                <td style={{ padding: "0.8rem" }}>
-                                                    {p.classificacao === "estrela" && <span style={{ background: "#fef8e7", border: "1px solid #e8b84b", color: "#b38210", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>⭐ Estrela</span>}
-                                                    {p.classificacao === "vaca_leiteira" && <span style={{ background: "#e8f5e9", color: "#2e7d32", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>🐄 Vaca Leiteira</span>}
-                                                    {p.classificacao === "enigma" && <span style={{ background: "#f3e5f5", color: "#7b1fa2", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>❓ Enigma</span>}
-                                                    {p.classificacao === "abacaxi" && <span style={{ background: "#f5f5f5", color: "#666", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem" }}>🐌 Abacaxi</span>}
-                                                    {!p.classificacao && <span style={{ color: "#aaa", fontSize: "0.75rem" }}>Sem dados</span>}
-                                                </td>
-                                                <td style={{ padding: "0.8rem" }}>
-                                                    {p.selo ? <span style={{ background: "#e8b84b", color: "#111", padding: "0.2rem 0.5rem", borderRadius: "8px", fontSize: "0.72rem", fontWeight: "700" }}>{p.selo}</span> : <span style={{ color: "#ccc" }}>—</span>}
-                                                </td>
-                                                <td style={{ padding: "0.8rem", textAlign: "right" }}>
-                                                    <button onClick={() => iniciarEdicao(p)} style={{ ...styles.btnEditar, padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>
-                                                        ✏️ Ajustar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                        {/* Barra de Pesquisa e Filtros */}
+                        <div style={{ display: "flex", gap: "0.8rem", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", marginBottom: "1rem" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: "1 1 280px" }}>
+                                <input
+                                    type="text"
+                                    placeholder="🔍 Pesquisar prato ou categoria..."
+                                    value={buscaEng}
+                                    onChange={(e) => setBuscaEng(e.target.value)}
+                                    style={{
+                                        width: "100%",
+                                        padding: "0.65rem 1rem",
+                                        borderRadius: "10px",
+                                        border: "1.5px solid #e0d9d0",
+                                        fontSize: "0.9rem",
+                                        outline: "none",
+                                        background: "#fff"
+                                    }}
+                                />
+                                {buscaEng && (
+                                    <button 
+                                        onClick={() => setBuscaEng("")} 
+                                        style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: "1rem" }}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+
+                            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                                {[
+                                    { id: "todos", label: "Todos" },
+                                    { id: "estrela", label: "⭐ Estrelas" },
+                                    { id: "vaca_leiteira", label: "🐄 Vacas" },
+                                    { id: "enigma", label: "❓ Enigmas" },
+                                    { id: "abacaxi", label: "🐌 Abacaxis" },
+                                    { id: "sem_custo", label: "⚠️ Sem Custo" },
+                                ].map(f => (
+                                    <button
+                                        key={f.id}
+                                        type="button"
+                                        onClick={() => setFiltroQuadrante(f.id)}
+                                        style={{
+                                            background: filtroQuadrante === f.id ? "#111" : "#faf8f5",
+                                            color: filtroQuadrante === f.id ? "#e8b84b" : "#666",
+                                            border: "1px solid #e0d9d0",
+                                            padding: "0.4rem 0.8rem",
+                                            borderRadius: "20px",
+                                            fontSize: "0.78rem",
+                                            fontWeight: "600",
+                                            cursor: "pointer"
+                                        }}
+                                    >
+                                        {f.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
+
+                        {/* Tabela com Barra de Rolagem Vertical e Horizontal */}
+                        {(() => {
+                            const pratosFiltradosEng = pratos.filter(p => {
+                                const matchBusca = p.nome.toLowerCase().includes(buscaEng.toLowerCase()) || 
+                                                   (p.categoria && p.categoria.toLowerCase().includes(buscaEng.toLowerCase()));
+                                if (!matchBusca) return false;
+
+                                if (filtroQuadrante === "todos") return true;
+                                if (filtroQuadrante === "sem_custo") return !p.custo || parseFloat(p.custo) <= 0;
+                                return p.classificacao === filtroQuadrante;
+                            });
+
+                            return (
+                                <>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
+                                        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.1rem", fontWeight: "700", margin: 0 }}>
+                                            📋 Mostrando {pratosFiltradosEng.length} de {pratos.length} itens
+                                        </h3>
+                                        <span style={{ fontSize: "0.78rem", color: "#888" }}>Role para baixo para ver mais</span>
+                                    </div>
+
+                                    <div style={{
+                                        maxHeight: "520px",
+                                        overflowY: "auto",
+                                        overflowX: "auto",
+                                        border: "1.5px solid #e8e0d5",
+                                        borderRadius: "12px",
+                                        background: "#fff"
+                                    }}>
+                                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
+                                            <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
+                                                <tr style={{ background: "#f5f0e8", borderBottom: "2px solid #e0d9d0" }}>
+                                                    <th style={{ padding: "0.85rem 1rem", minWidth: "180px" }}>Prato</th>
+                                                    <th style={{ padding: "0.85rem", minWidth: "130px" }}>Categoria</th>
+                                                    <th style={{ padding: "0.85rem", minWidth: "100px" }}>Preço</th>
+                                                    <th style={{ padding: "0.85rem", minWidth: "110px" }}>Custo (CMV)</th>
+                                                    <th style={{ padding: "0.85rem", minWidth: "90px" }}>Margem</th>
+                                                    <th style={{ padding: "0.85rem", minWidth: "130px" }}>Classificação</th>
+                                                    <th style={{ padding: "0.85rem", minWidth: "120px" }}>Selo Ativo</th>
+                                                    <th style={{ padding: "0.85rem 1rem", textAlign: "right", minWidth: "90px" }}>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {pratosFiltradosEng.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={8} style={{ padding: "3rem", textAlign: "center", color: "#999" }}>
+                                                            Nenhum prato encontrado para os filtros selecionados.
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    pratosFiltradosEng.map((p) => {
+                                                        const margem = (p.preco && p.custo) ? (((p.preco - p.custo) / p.preco) * 100).toFixed(1) : null;
+                                                        return (
+                                                            <tr key={p.id} style={{ borderBottom: "1px solid #f0ebe3" }}>
+                                                                <td style={{ padding: "0.75rem 1rem", fontWeight: "600" }}>{p.nome}</td>
+                                                                <td style={{ padding: "0.75rem", color: "#777" }}>{p.categoria}</td>
+                                                                <td style={{ padding: "0.75rem", fontWeight: "700" }}>R$ {parseFloat(p.preco).toFixed(2).replace(".", ",")}</td>
+                                                                <td style={{ padding: "0.75rem", color: p.custo ? "#333" : "#bbb" }}>
+                                                                    {p.custo ? `R$ ${parseFloat(p.custo).toFixed(2).replace(".", ",")}` : "Sem custo"}
+                                                                </td>
+                                                                <td style={{ padding: "0.75rem", fontWeight: "600", color: margem > 55 ? "#2e7d32" : margem ? "#c0392b" : "#aaa" }}>
+                                                                    {margem ? `${margem}%` : "—"}
+                                                                </td>
+                                                                <td style={{ padding: "0.75rem" }}>
+                                                                    {p.classificacao === "estrela" && <span style={{ background: "#fef8e7", border: "1px solid #e8b84b", color: "#b38210", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>⭐ Estrela</span>}
+                                                                    {p.classificacao === "vaca_leiteira" && <span style={{ background: "#e8f5e9", color: "#2e7d32", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>🐄 Vaca Leiteira</span>}
+                                                                    {p.classificacao === "enigma" && <span style={{ background: "#f3e5f5", color: "#7b1fa2", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>❓ Enigma</span>}
+                                                                    {p.classificacao === "abacaxi" && <span style={{ background: "#f5f5f5", color: "#666", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem" }}>🐌 Abacaxi</span>}
+                                                                    {!p.classificacao && <span style={{ color: "#aaa", fontSize: "0.75rem" }}>Sem dados</span>}
+                                                                </td>
+                                                                <td style={{ padding: "0.75rem" }}>
+                                                                    {p.selo ? <span style={{ background: "#e8b84b", color: "#111", padding: "0.2rem 0.5rem", borderRadius: "8px", fontSize: "0.72rem", fontWeight: "700" }}>{p.selo}</span> : <span style={{ color: "#ccc" }}>—</span>}
+                                                                </td>
+                                                                <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
+                                                                    <button onClick={() => iniciarEdicao(p)} style={{ ...styles.btnEditar, padding: "0.3rem 0.65rem", fontSize: "0.8rem" }}>
+                                                                        ✏️ Ajustar
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
@@ -436,8 +594,48 @@ export default function Admin() {
                                     </select>
                                 </div>
                                 <div style={styles.grupo}>
-                                    <label style={styles.label}>Selo Promocional</label>
-                                    <input style={styles.input} type="text" placeholder="Ex: 🔥 Mais Pedido, 👨‍🍳 Recomendado" value={form.selo} onChange={(e) => setForm(f => ({ ...f, selo: e.target.value }))} />
+                                    <label style={styles.label}>Selo / Flag Promocional</label>
+                                    <select 
+                                        style={{ ...styles.input, cursor: "pointer" }} 
+                                        value={form.selo} 
+                                        onChange={(e) => setForm(f => ({ ...f, selo: e.target.value }))}
+                                    >
+                                        <option value="">Nenhum selo ativo</option>
+                                        {selos.map(s => (
+                                            <option key={s.id} value={`${s.icone} ${s.nome}`}>{s.icone} {s.nome}</option>
+                                        ))}
+                                    </select>
+                                    {/* Chips rápidos de clique */}
+                                    <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginTop: "0.3rem" }}>
+                                        {selos.slice(0, 4).map(s => (
+                                            <button
+                                                key={s.id}
+                                                type="button"
+                                                onClick={() => setForm(f => ({ ...f, selo: `${s.icone} ${s.nome}` }))}
+                                                style={{
+                                                    background: form.selo === `${s.icone} ${s.nome}` ? "#e8b84b" : "#f7f3ed",
+                                                    color: form.selo === `${s.icone} ${s.nome}` ? "#111" : "#555",
+                                                    border: "1px solid #e0d9d0",
+                                                    padding: "0.2rem 0.55rem",
+                                                    borderRadius: "15px",
+                                                    fontSize: "0.72rem",
+                                                    fontWeight: "600",
+                                                    cursor: "pointer"
+                                                }}
+                                            >
+                                                {s.icone} {s.nome}
+                                            </button>
+                                        ))}
+                                        {form.selo && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm(f => ({ ...f, selo: "" }))}
+                                                style={{ background: "none", border: "none", color: "#c0392b", fontSize: "0.72rem", cursor: "pointer" }}
+                                            >
+                                                ✕ Remover
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -625,6 +823,143 @@ export default function Admin() {
                                             style={{ ...styles.btnDel, ...(qtd > 0 ? { opacity: 0.4, cursor: "not-allowed" } : {}) }}
                                             onClick={() => qtd === 0 && handleDeletarCategoria(cat.id, cat.nome)}
                                             title={qtd > 0 ? `${qtd} prato(s) usam esta categoria` : "Remover categoria"}
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── ABA SELOS / FLAGS ── */}
+            {aba === "selos" && (
+                <div className="admin-body" style={styles.body}>
+                    {/* Form criar selo */}
+                    <div className="admin-card" style={styles.card}>
+                        <h2 className="admin-card-titulo" style={styles.cardTitulo}>🏷️ Criar Novo Selo / Flag</h2>
+                        <form onSubmit={handleCriarSelo} style={styles.form}>
+                            <div style={styles.grupo}>
+                                <label style={styles.label}>Nome do Selo *</label>
+                                <input
+                                    style={styles.input}
+                                    type="text"
+                                    placeholder="Ex: Prato do Dia, Campeão de Vendas"
+                                    value={seloNome}
+                                    onChange={(e) => setSeloNome(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="admin-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
+                                <div style={styles.grupo}>
+                                    <label style={styles.label}>Ícone / Emoji</label>
+                                    <input
+                                        style={{ ...styles.input, textAlign: "center", fontSize: "1.3rem" }}
+                                        type="text"
+                                        value={seloIcone}
+                                        onChange={(e) => setSeloIcone(e.target.value)}
+                                        maxLength={4}
+                                    />
+                                </div>
+                                <div style={styles.grupo}>
+                                    <label style={styles.label}>Cor da Flag</label>
+                                    <input
+                                        style={{ ...styles.input, height: "42px", padding: "0.2rem", cursor: "pointer" }}
+                                        type="color"
+                                        value={seloCor}
+                                        onChange={(e) => setSeloCor(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={styles.grupo}>
+                                <label style={styles.label}>Sugestões de Ícones</label>
+                                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                                    {["🔥", "⭐", "👨‍🍳", "✨", "🏆", "🆕", "🥇", "💥", "🌶️", "🍹", "🥩", "🍕"].map(ic => (
+                                        <button
+                                            key={ic}
+                                            type="button"
+                                            onClick={() => setSeloIcone(ic)}
+                                            style={{
+                                                fontSize: "1.2rem",
+                                                background: seloIcone === ic ? "#e8b84b" : "#f5f0e8",
+                                                border: "1px solid #e0d9d0",
+                                                padding: "0.3rem 0.6rem",
+                                                borderRadius: "8px",
+                                                cursor: "pointer"
+                                            }}
+                                        >
+                                            {ic}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Prévia do Selo */}
+                            {seloNome && (
+                                <div style={{ background: "#fbf9f5", padding: "0.8rem 1rem", borderRadius: "10px", border: "1px dashed #e0d9d0" }}>
+                                    <p style={{ fontSize: "0.75rem", color: "#888", marginBottom: "0.4rem" }}>Prévia no cardápio:</p>
+                                    <span style={{
+                                        background: "linear-gradient(135deg, #e8b84b, #d49b28)",
+                                        color: "#111",
+                                        padding: "0.3rem 0.8rem",
+                                        borderRadius: "20px",
+                                        fontSize: "0.78rem",
+                                        fontWeight: "800",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                                    }}>
+                                        {seloIcone} {seloNome}
+                                    </span>
+                                </div>
+                            )}
+
+                            {erro     && <div style={styles.alertaErro}>⚠️ {erro}</div>}
+                            {mensagem && <div style={styles.alertaSucesso}>✅ {mensagem}</div>}
+
+                            <button style={styles.btnAdicionar} type="submit" disabled={enviandoSelo}>
+                                {enviandoSelo ? "Criando..." : "➕ Criar Selo"}
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* Lista de selos existentes */}
+                    <div className="admin-card" style={styles.card}>
+                        <h2 className="admin-card-titulo" style={styles.cardTitulo}>
+                            🏷️ Selos Cadastrados ({selos.length})
+                        </h2>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                            {selos.map((s) => {
+                                const usados = pratos.filter(p => p.selo === `${s.icone} ${s.nome}` || p.selo === s.nome).length;
+                                return (
+                                    <div
+                                        key={s.id}
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            padding: "0.8rem 1rem",
+                                            background: "#fff",
+                                            borderRadius: "10px",
+                                            border: "1px solid #f0ebe3"
+                                        }}
+                                    >
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                                            <span style={{ fontSize: "1.4rem" }}>{s.icone}</span>
+                                            <div>
+                                                <p style={{ fontWeight: "700", color: "#333", fontSize: "0.92rem", margin: 0 }}>{s.nome}</p>
+                                                <p style={{ fontSize: "0.75rem", color: "#999", margin: 0 }}>
+                                                    {usados} {usados === 1 ? "prato usando este selo" : "pratos usando este selo"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="admin-btn-action"
+                                            style={styles.btnDel}
+                                            onClick={() => handleDeletarSelo(s.id, s.nome)}
+                                            title="Remover selo"
                                         >
                                             🗑️
                                         </button>

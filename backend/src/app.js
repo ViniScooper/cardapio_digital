@@ -10,6 +10,7 @@ const authRoutes      = require("./routes/authRoutes");
 const pratoRoutes     = require("./routes/pratoRoutes");
 const categoriaRoutes = require("./routes/categoriaRoutes");
 const configRoutes    = require("./routes/configRoutes");
+const seloRoutes      = require("./routes/seloRoutes");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use("/auth",       authRoutes);
 app.use("/pratos",     pratoRoutes);
 app.use("/categorias", categoriaRoutes);
 app.use("/config",     configRoutes);
+app.use("/selos",      seloRoutes);
 
 app.get("/", (req, res) => {
     res.json({ mensagem: "API do Boteco do Sivirino funcionando! 🍺" });
