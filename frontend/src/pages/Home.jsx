@@ -77,23 +77,29 @@ export default function Home() {
                 <div style={styles.heroOverlay} />
                 <div style={styles.heroContent}>
                     <img src="/logo.png" alt="Logo" className="hero-logo" style={styles.heroLogo} />
-                    <p style={styles.heroLabel}>O Mais Raiz de Recife</p>
+                    <p style={styles.heroLabel}>Comida Arretada & Cerveja Gelada</p>
                     <h1 className="hero-title" style={styles.heroTitle}>Boteco do Sivirino</h1>
                     <div className="hero-tags" style={styles.heroTags}>
-                        <span className="hero-tag" style={styles.tag}>🍽️ Almoço</span>
-                        <span className="hero-tag" style={styles.tag}>🍕 Pizzas</span>
+                        <span className="hero-tag" style={styles.tag}>🍲 Refeições</span>
                         <span className="hero-tag" style={styles.tag}>🍟 Petiscos</span>
-                        <span className="hero-tag" style={styles.tag}>🍺 Cerveja gelada</span>
+                        <span className="hero-tag" style={styles.tag}>🍕 Pizzas</span>
+                        <span className="hero-tag" style={styles.tag}>🍺 Cerveja Gelada</span>
+                        <span className="hero-tag" style={styles.tag}>🍹 Drinks</span>
                     </div>
                     <div className="hero-info" style={styles.heroInfo}>
                         <div style={styles.infoItem}>
-                            <span>🕒</span>
-                            <span style={styles.infoText}>Terça a domingo a partir das 11h</span>
+                            <span>📍</span>
+                            <span style={styles.infoText}>Rua Larga da Feitosa, 138 — Encruzilhada</span>
                         </div>
                         <div className="hero-info-sep" style={styles.infoSep} />
                         <div style={styles.infoItem}>
-                            <span>📍</span>
-                            <span style={styles.infoText}>Rua Larga do Feitosa, 138 — Encruzilhada</span>
+                            <span>📱</span>
+                            <span style={styles.infoText}>(81) 98271-4421</span>
+                        </div>
+                        <div className="hero-info-sep" style={styles.infoSep} />
+                        <div style={styles.infoItem}>
+                            <span>📸</span>
+                            <span style={styles.infoText}>@BOTECODO_SIVIRINO</span>
                         </div>
                     </div>
                     <div className="hero-btns" style={styles.heroBtns}>
@@ -161,13 +167,17 @@ export default function Home() {
             <footer className="footer-container" style={styles.footer}>
                 <img src="/logo.png" alt="Logo" style={styles.footerLogo} />
                 <p style={styles.footerNome}>Boteco do Sivirino</p>
-                <p style={styles.footerSlogan}>O Mais Raiz de Recife</p>
+                <p style={styles.footerSlogan}>Comida Arretada & Cerveja Gelada</p>
                 <div className="footer-infos" style={styles.footerInfos}>
-                    <span>🕒 Terça a domingo a partir das 11h</span>
+                    <span>📍 Rua Larga da Feitosa, 138 — Encruzilhada, Recife</span>
                     <span className="footer-sep" style={{ color: "#333" }}>|</span>
-                    <span>📍 Rua Larga do Feitosa, 138 — Encruzilhada, Recife</span>
+                    <span>📱 WhatsApp: (81) 98271-4421</span>
+                    <span className="footer-sep" style={{ color: "#333" }}>|</span>
+                    <span>📸 @BOTECODO_SIVIRINO</span>
+                    <span className="footer-sep" style={{ color: "#333" }}>|</span>
+                    <span>🛵 Disponível no iFood</span>
                 </div>
-                <p style={styles.footerCopy}>© 2024 Boteco do Sivirino — Todos os direitos reservados</p>
+                <p style={styles.footerCopy}>© {new Date().getFullYear()} Boteco do Sivirino — Todos os direitos reservados</p>
             </footer>
         </div>
     );

@@ -37,7 +37,7 @@ export default function Navbar() {
                 <img src="/logo.png" alt="Logo Boteco do Sivirino" style={styles.logoImg} />
                 <div className="navbar-logo-textos" style={styles.logoTextos}>
                     <span style={styles.logoNome}>Boteco do Sivirino</span>
-                    <span className="navbar-logo-slogan" style={styles.logoSlogan}>O Mais Raiz de Recife</span>
+                    <span className="navbar-logo-slogan" style={styles.logoSlogan}>Comida Arretada & Cerveja Gelada</span>
                 </div>
             </Link>
 
