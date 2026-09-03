@@ -4,11 +4,9 @@
 // ============================================================
 
 import axios from "axios";
+import { BASE_API_URL } from "../config/environment";
 
-// Pega automaticamente o mesmo hostname/IP que o cliente está usando no navegador
-// Ex: se abriu pelo celular via http://192.168.1.5:5173, a API será http://192.168.1.5:3001
-const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
-export const API_BASE_URL = `http://${hostname}:3001`;
+export const API_BASE_URL = BASE_API_URL;
 
 // URL base do backend
 const api = axios.create({
