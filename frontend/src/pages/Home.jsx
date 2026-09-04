@@ -247,16 +247,6 @@ export default function Home() {
 
             {!loading && !erro && (
                 <>
-                    {/* ── BOTÃO FLUTUANTE DE CATEGORIAS NO COMPUTADOR (HAMBURGUER DESKTOP) ── */}
-                    <button
-                        className="cat-desktop-btn"
-                        onClick={() => setMenuCatAberto(true)}
-                        title="Ver todas as categorias"
-                    >
-                        <span className="cat-desktop-icon">☰</span>
-                        <span>Categorias</span>
-                    </button>
-
                     {/* ── MENU LATERAL / DRAWER DE CATEGORIAS NO COMPUTADOR ── */}
                     {menuCatAberto && (
                         <div className="cat-drawer-overlay" onClick={() => setMenuCatAberto(false)}>
