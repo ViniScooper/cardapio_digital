@@ -361,7 +361,16 @@ export default function Home() {
                     <div id="cardapio">
                         {/* ── SEÇÕES POR CATEGORIA ─────────────────────── */}
                         {nomesCategoria.map((cat) => {
-                            const pratosDaCat = pratos.filter(p => p.categoria === cat && !p.happy_hour);
+                            const pratosDaCat = pratos
+                                .filter(p => p.categoria === cat && !p.happy_hour)
+                                .sort((a, b) => {
+                                    const oA = a.ordem_manual || 0;
+                                    const oB = b.ordem_manual || 0;
+                                    if (oA > 0 && oB > 0) return oA - oB;
+                                    if (oA > 0) return -1;
+                                    if (oB > 0) return 1;
+                                    return 0;
+                                });
                             if (pratosDaCat.length === 0) return null;
                             return (
                                 <section key={cat} id={criarIdCategoria(cat)} className="menu-section" style={styles.section}>

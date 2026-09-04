@@ -55,6 +55,7 @@ export default function Admin() {
     const [preview,    setPreview]    = useState(null);
     const [editandoId, setEditandoId] = useState(null);
     const [filtroHH,   setFiltroHH]   = useState(false);
+    const [catFiltro,  setCatFiltro]  = useState("todas");
     const inputFileRef = useRef(null);
 
     const [catNome,    setCatNome]    = useState("");
@@ -330,7 +331,28 @@ export default function Admin() {
         }
     };
 
-    const pratosFiltrados = filtroHH ? pratos.filter(p => p.happy_hour) : pratos;
+    // Pratos filtrados e ordenados de forma idêntica ao cardápio
+    const pratosFiltrados = pratos
+        .filter(p => {
+            if (filtroHH && !p.happy_hour) return false;
+            if (catFiltro !== "todas" && p.categoria !== catFiltro) return false;
+            return true;
+        })
+        .sort((a, b) => {
+            // Se estiver vendo todas as categorias, agrupa por ordem da categoria primeiro
+            if (catFiltro === "todas" && a.categoria !== b.categoria) {
+                const indexA = categorias.findIndex(c => c.nome === a.categoria);
+                const indexB = categorias.findIndex(c => c.nome === b.categoria);
+                return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+            }
+            // Dentro da mesma categoria, ordena estritamente por ordem_manual
+            const oA = a.ordem_manual || 0;
+            const oB = b.ordem_manual || 0;
+            if (oA > 0 && oB > 0) return oA - oB;
+            if (oA > 0) return -1;
+            if (oB > 0) return 1;
+            return 0;
+        });
 
     return (
         <div style={styles.page}>
@@ -761,13 +783,42 @@ export default function Admin() {
 
                     {/* Lista pratos */}
                     <div className="admin-card" style={styles.card}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", paddingBottom: "1rem", borderBottom: "2px solid #f0ebe3", gap: "0.5rem", flexWrap: "wrap" }}>
-                            <h2 className="admin-card-titulo" style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: "700", color: "#1a1a1a", margin: 0 }}>
-                                📋 Pratos ({pratosFiltrados.length})
-                            </h2>
-                            <button onClick={() => setFiltroHH(!filtroHH)} style={{ ...styles.filtroBtnHH, ...(filtroHH ? styles.filtroBtnHHAtivo : {}) }}>
-                                🍺 {filtroHH ? "Ver todos" : "Só Happy Hour"}
-                            </button>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", paddingBottom: "1rem", borderBottom: "2px solid #f0ebe3", gap: "0.8rem", flexWrap: "wrap" }}>
+                            <div>
+                                <h2 className="admin-card-titulo" style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: "700", color: "#1a1a1a", margin: 0 }}>
+                                    📋 Pratos ({pratosFiltrados.length})
+                                </h2>
+                                <p style={{ fontSize: "0.78rem", color: "#888", margin: "0.2rem 0 0" }}>
+                                    Use as setas ▲ e ▼ para posicionar os pratos na ordem exata do cardápio
+                                </p>
+                            </div>
+
+                            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                                <select
+                                    value={catFiltro}
+                                    onChange={(e) => setCatFiltro(e.target.value)}
+                                    style={{
+                                        padding: "0.4rem 0.8rem",
+                                        borderRadius: "8px",
+                                        border: "1px solid #ddd",
+                                        fontSize: "0.85rem",
+                                        background: "#fff",
+                                        fontWeight: "600",
+                                        color: "#444"
+                                    }}
+                                >
+                                    <option value="todas">📂 Todas as Categorias</option>
+                                    {categorias.map(c => (
+                                        <option key={c.id} value={c.nome}>
+                                            {c.icone} {c.nome}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <button onClick={() => setFiltroHH(!filtroHH)} style={{ ...styles.filtroBtnHH, ...(filtroHH ? styles.filtroBtnHHAtivo : {}) }}>
+                                    🍺 {filtroHH ? "Ver todos" : "Só Happy Hour"}
+                                </button>
+                            </div>
                         </div>
 
                         {loading ? <div style={styles.center}><div style={styles.spinner} /></div>
