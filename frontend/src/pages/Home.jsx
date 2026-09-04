@@ -42,6 +42,7 @@ export default function Home() {
     const [loading,       setLoading]       = useState(true);
     const [erro,          setErro]          = useState("");
     const [menuCatAberto, setMenuCatAberto] = useState(false);
+    const [categoriaAtiva, setCategoriaAtiva] = useState("");
 
     // ── ESTADO DO CARRINHO DE PEDIDOS VIA WHATSAPP ──
     const [carrinho,      setCarrinho]      = useState(() => {
@@ -157,6 +158,43 @@ export default function Home() {
         ? categorias.map(c => c.nome).filter(nome => pratos.some(p => p.categoria === nome && !p.happy_hour))
         : [...new Set(pratos.filter(p => !p.happy_hour).map(p => p.categoria))];
 
+    const criarIdCategoria = (nome) => `cat-${nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+
+    useEffect(() => {
+        if (!nomesCategoria.length) return;
+
+        setCategoriaAtiva(criarIdCategoria(nomesCategoria[0]));
+        const secoes = nomesCategoria
+            .map(criarIdCategoria)
+            .map(id => document.getElementById(id))
+            .filter(Boolean);
+        const atualizarCategoriaAtiva = () => {
+            const limite = 150;
+            const atual = secoes
+                .filter(secao => secao.getBoundingClientRect().top <= limite)
+                .at(-1);
+            if (atual) setCategoriaAtiva(atual.id);
+        };
+        const observer = new IntersectionObserver(atualizarCategoriaAtiva, { rootMargin: "-150px 0px -55% 0px", threshold: [0, 0.25, 0.6] });
+
+        secoes.forEach(secao => observer.observe(secao));
+        window.addEventListener("scroll", atualizarCategoriaAtiva, { passive: true });
+        atualizarCategoriaAtiva();
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("scroll", atualizarCategoriaAtiva);
+        };
+    }, [nomesCategoria.join("|")]);
+
+    useEffect(() => {
+        const itemAtivo = document.querySelector(".cat-nav-item-active");
+        const barra = itemAtivo?.closest(".cat-nav-bar");
+        if (itemAtivo && barra) {
+            const alvo = itemAtivo.offsetLeft - (barra.clientWidth - itemAtivo.offsetWidth) / 2;
+            barra.scrollTo({ left: Math.max(0, alvo), behavior: "smooth" });
+        }
+    }, [categoriaAtiva]);
+
     return (
         <div>
             {/* ── HERO ─────────────────────────────────────────── */}
@@ -245,7 +283,7 @@ export default function Home() {
 
                                 <div className="cat-drawer-list">
                                     {nomesCategoria.map((cat) => {
-                                        const idAlvo = `cat-${cat.toLowerCase().replace(/\s+/g, '-')}`;
+                                        const idAlvo = criarIdCategoria(cat);
                                         return (
                                             <a
                                                 key={cat}
@@ -284,13 +322,14 @@ export default function Home() {
                     <div className="cat-nav-bar" style={styles.catNavBar}>
                         <div style={styles.catNavContainer}>
                             {nomesCategoria.map((cat) => {
-                                const idAlvo = `cat-${cat.toLowerCase().replace(/\s+/g, '-')}`;
+                                const idAlvo = criarIdCategoria(cat);
                                 return (
                                     <a
                                         key={cat}
                                         href={`#${idAlvo}`}
-                                        className="cat-nav-item"
+                                        className={`cat-nav-item ${categoriaAtiva === idAlvo ? "cat-nav-item-active" : ""}`}
                                         style={styles.catNavItem}
+                                        aria-current={categoriaAtiva === idAlvo ? "location" : undefined}
                                     >
                                         <span style={{ fontSize: "1.1rem" }}>{getIconeCategoria(cat)}</span>
                                         <span>{cat}</span>
@@ -308,6 +347,15 @@ export default function Home() {
                                     <span>Happy Hour</span>
                                 </a>
                             )}
+
+                            <button
+                                type="button"
+                                className="cat-nav-top"
+                                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                                title="Voltar ao topo do cardápio"
+                            >
+                                ↑ <span>Topo</span>
+                            </button>
                         </div>
                     </div>
 
@@ -317,9 +365,9 @@ export default function Home() {
                             const pratosDaCat = pratos.filter(p => p.categoria === cat && !p.happy_hour);
                             if (pratosDaCat.length === 0) return null;
                             return (
-                                <section key={cat} id={`cat-${cat.toLowerCase().replace(/\s+/g, '-')}`} className="menu-section" style={styles.section}>
+                                <section key={cat} id={criarIdCategoria(cat)} className="menu-section" style={styles.section}>
                                     <div style={styles.sectionHeader}>
-                                        <p style={styles.sectionLabel}>{getIconeCategoria(cat)} {cat}</p>
+                                        <p className="section-label" style={styles.sectionLabel}>{getIconeCategoria(cat)} {cat}</p>
                                         <h2 style={styles.sectionTitle}>{cat}</h2>
                                         <div style={styles.sectionDivider} />
                                     </div>

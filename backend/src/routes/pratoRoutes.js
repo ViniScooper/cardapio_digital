@@ -11,10 +11,14 @@ const {
     editarPrato, 
     deletarPrato,
     registrarVisualizacao,
-    obterMatrizEngenharia
+    obterMatrizEngenharia,
+    reordenarPratos
 } = require("../controllers/pratoController");
 const { verificarToken, apenasAdmin } = require("../middleware/authMiddleware");
 const upload = require("../config/upload");
+
+// PUT  /pratos/reordenar        — admin: salvar ordem manual dos pratos
+router.put("/reordenar", verificarToken, apenasAdmin, reordenarPratos);
 
 // GET  /pratos/matriz           — admin: dados agregados de margem e popularidade
 router.get("/matriz", verificarToken, apenasAdmin, obterMatrizEngenharia);

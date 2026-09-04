@@ -17,11 +17,29 @@ html {
 html, body {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .menu-section, .hh-section {
   scroll-margin-top: 140px;
+}
+
+.menu-section {
+  border-top: 1px solid #e8e0d5;
+}
+
+.menu-section + .menu-section {
+  padding-top: 3rem !important;
+}
+
+.section-label {
+  display: inline-flex !important;
+  align-items: center;
+  background: #fff7df;
+  border: 1px solid #e8b84b;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  letter-spacing: 2px !important;
 }
 
 body {
@@ -42,6 +60,35 @@ a {
   border-color: #e8b84b !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(232, 184, 75, 0.2);
+}
+
+.cat-nav-item-active {
+  background: #111 !important;
+  border-color: #111 !important;
+  color: #e8b84b !important;
+  box-shadow: 0 4px 12px rgba(17, 17, 17, 0.18);
+}
+
+.cat-nav-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  border: 1px solid #c0392b;
+  border-radius: 50px;
+  background: #fff;
+  color: #a52d23;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cat-nav-top:hover {
+  background: #c0392b;
+  color: #fff;
+  transform: translateY(-2px);
 }
 
 .cat-nav-bar::-webkit-scrollbar {
@@ -82,13 +129,6 @@ a {
 
 .cat-desktop-icon {
   font-size: 1.2rem;
-}
-
-/* No desktop (acima de 850px), oculta a barra horizontal de chips */
-@media (min-width: 851px) {
-  .cat-nav-bar {
-    display: none !important;
-  }
 }
 
 /* No mobile (menor ou igual a 850px), o botão flutuante fica mais compacto e ergonômico */

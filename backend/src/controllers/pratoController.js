@@ -165,11 +165,35 @@ const obterMatrizEngenharia = (req, res) => {
     });
 };
 
+// PUT /pratos/reordenar — admin (atualiza a ordem manual de pratos)
+const reordenarPratos = (req, res) => {
+    const { pratos } = req.body; // Array de { id, ordem_manual }
+
+    if (!Array.isArray(pratos) || pratos.length === 0) {
+        return res.status(400).json({ erro: "Envie uma lista de pratos com seus IDs e nova ordem." });
+    }
+
+    const updates = pratos.map(p => {
+        return new Promise((resolve, reject) => {
+            db.query(
+                "UPDATE prato SET ordem_manual = ? WHERE id = ?",
+                [parseInt(p.ordem_manual, 10), parseInt(p.id, 10)],
+                (err) => err ? reject(err) : resolve()
+            );
+        });
+    });
+
+    Promise.all(updates)
+        .then(() => res.json({ mensagem: "Ordem dos pratos salva com sucesso!" }))
+        .catch(err => res.status(500).json({ erro: err.message }));
+};
+
 module.exports = {
     listarPratos,
     criarPrato,
     editarPrato,
     deletarPrato,
     registrarVisualizacao,
-    obterMatrizEngenharia
+    obterMatrizEngenharia,
+    reordenarPratos
 };

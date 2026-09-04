@@ -239,6 +239,43 @@ export default function Admin() {
         }
     };
 
+    const handleMoverPrato = async (pratoId, direcao) => {
+        // Encontra o prato e sua categoria atual
+        const pratoAlvo = pratos.find(p => p.id === pratoId);
+        if (!pratoAlvo) return;
+
+        // Pega todos os pratos da mesma categoria na ordem atual
+        const pratosMesmaCat = pratos.filter(p => p.categoria === pratoAlvo.categoria && !p.happy_hour);
+        const indexNaCat = pratosMesmaCat.findIndex(p => p.id === pratoId);
+        const novoIndex = indexNaCat + direcao;
+
+        if (novoIndex < 0 || novoIndex >= pratosMesmaCat.length) return;
+
+        // Troca posições na lista da categoria
+        const novaListaCat = [...pratosMesmaCat];
+        const [movido] = novaListaCat.splice(indexNaCat, 1);
+        novaListaCat.splice(novoIndex, 0, movido);
+
+        // Atribui ordem_manual sequencial (1, 2, 3...) para todos os pratos dessa categoria
+        const payload = novaListaCat.map((p, i) => ({ id: p.id, ordem_manual: i + 1 }));
+
+        // Atualização otimista imediata no estado local
+        setPratos(pratosAtuais => {
+            return pratosAtuais.map(p => {
+                const itemAtualizado = payload.find(item => item.id === p.id);
+                return itemAtualizado ? { ...p, ordem_manual: itemAtualizado.ordem_manual } : p;
+            });
+        });
+
+        try {
+            await api.put("/pratos/reordenar", { pratos: payload });
+            setMensagem(`Posição de "${pratoAlvo.nome}" atualizada!`);
+        } catch (err) {
+            setErro("Erro ao salvar ordem dos pratos.");
+            carregarTudo();
+        }
+    };
+
     const handleDeletarCategoria = async (id, nome) => {
         if (!window.confirm(`Remover a categoria "${nome}"?`)) return;
         try {
@@ -755,7 +792,45 @@ export default function Admin() {
 
                                         <div className="admin-item-dir" style={styles.itemDir}>
                                             <span style={styles.itemPreco}>R$ {parseFloat(prato.preco).toFixed(2).replace(".", ",")}</span>
-                                            <div style={{ display: "flex", gap: "0.4rem" }}>
+                                            <div style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}>
+                                                {/* Botão Subir Prato */}
+                                                <button
+                                                    className="admin-btn-action"
+                                                    style={{
+                                                        background: "#f0ebe3",
+                                                        color: "#333",
+                                                        border: "1px solid #ddd",
+                                                        borderRadius: "8px",
+                                                        padding: "0.35rem 0.55rem",
+                                                        cursor: "pointer",
+                                                        fontSize: "0.82rem",
+                                                        fontWeight: "700"
+                                                    }}
+                                                    onClick={() => handleMoverPrato(prato.id, -1)}
+                                                    title="Mover para cima no cardápio"
+                                                >
+                                                    ▲
+                                                </button>
+
+                                                {/* Botão Descer Prato */}
+                                                <button
+                                                    className="admin-btn-action"
+                                                    style={{
+                                                        background: "#f0ebe3",
+                                                        color: "#333",
+                                                        border: "1px solid #ddd",
+                                                        borderRadius: "8px",
+                                                        padding: "0.35rem 0.55rem",
+                                                        cursor: "pointer",
+                                                        fontSize: "0.82rem",
+                                                        fontWeight: "700"
+                                                    }}
+                                                    onClick={() => handleMoverPrato(prato.id, 1)}
+                                                    title="Mover para baixo no cardápio"
+                                                >
+                                                    ▼
+                                                </button>
+
                                                 <button className="admin-btn-action" style={styles.btnEditar} onClick={() => iniciarEdicao(prato)} title="Editar">✏️</button>
                                                 <button className="admin-btn-action" style={styles.btnDel} onClick={() => handleDeletar(prato.id, prato.nome)} title="Remover">🗑️</button>
                                             </div>
