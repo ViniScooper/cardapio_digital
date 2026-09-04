@@ -28,6 +28,7 @@ Nao foi encontrado bloqueio critico durante esta rodada. Existem melhorias recom
 | QA-10 | Painel em viewport de 390 px | PASSOU | Painel abriu, manteve indicadores e sem overflow horizontal relevante |
 | QA-11 | Build de producao | PASSOU | `npm run build` concluiu com 95 modulos transformados |
 | QA-12 | Apresentacao local | PASSOU | 7 slides e 7 imagens carregadas no HTML do pitch |
+| QA-13 | Upload de imagem no deploy Vercel | PARCIAL | Backend aceitou PNG e criou URL, mas navegador bloqueou a imagem ao carregar `/uploads` |
 
 ## Achados e riscos
 
@@ -82,6 +83,20 @@ O token e salvo em `localStorage`. Isso facilita a persistencia do login, mas au
 Os `package.json` nao possuem script de teste. A validacao atual foi manual e por smoke test no navegador.
 
 **Melhoria sugerida:** adicionar testes de API para login e CRUD, testes de componentes para login e painel, e pelo menos um fluxo E2E para login, cadastro e logout.
+
+### QA-F06 — Imagens do backend nao renderizam no deploy da Vercel
+
+**Prioridade:** Alta  
+**Tipo:** bug funcional / deploy  
+**Status:** Reproduzido no endereco `https://cardapiodigital-gamma.vercel.app`.
+
+O login administrativo funcionou e o upload de uma imagem PNG foi aceito: o total passou temporariamente de 134 para 135 pratos e o registro recebeu um caminho `/uploads/prato-...png`. Entretanto, as imagens exibidas pelo cardapio e pelo painel apontaram para `https://peers-discussed-gadgets-metres.trycloudflare.com//uploads/...` e o navegador registrou `ERR_BLOCKED_BY_ORB`; os elementos ficaram com `naturalWidth = 0`.
+
+**Impacto:** o cliente nao visualiza as fotos dos pratos no deploy da Vercel, embora o arquivo seja gravado no backend.
+
+**Causa provavel:** a aplicacao esta usando um backend temporario por Cloudflare Tunnel e construindo URLs de upload com barra duplicada (`//uploads`). Tambem e necessario confirmar que o endpoint entrega imagens com `Content-Type` correto e headers compativeis com acesso cross-origin.
+
+**Melhoria sugerida:** usar uma URL de API sem barra final, normalizar a montagem das URLs (`${API_URL.replace(/\\/$/, "")}${path}`), testar `/uploads/arquivo` com resposta `200` e `Content-Type: image/*`, e preferir servir frontend, API e uploads sob o mesmo dominio HTTPS por Nginx. Para producao, migrar uploads para armazenamento persistente, como volume da VPS ou Supabase Storage; nao depender do filesystem efemero da Vercel.
 
 ## Melhorias de produto recomendadas
 

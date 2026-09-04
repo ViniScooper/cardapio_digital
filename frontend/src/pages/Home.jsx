@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from "react";
 import api, { API_BASE_URL as API_URL } from "../services/api";
+import { getImagemUrl } from "../config/environment";
 
 const getEmoji = (nome) => {
     const n = nome.toLowerCase();
@@ -763,7 +764,7 @@ function PratoCard({ prato, happyHour, onAdicionar, qtdNoCarrinho }) {
         >
             {prato.imagem ? (
                 <div style={styles.cardImgBox}>
-                    <img src={`${API_URL}${prato.imagem}`} alt={prato.nome} style={styles.cardImg} />
+                    <img src={getImagemUrl(prato.imagem)} alt={prato.nome} style={styles.cardImg} />
                     {prato.selo ? (
                         <div style={styles.seloBadge}>{prato.selo}</div>
                     ) : isEstrela ? (

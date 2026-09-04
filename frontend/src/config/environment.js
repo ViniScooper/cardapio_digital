@@ -32,7 +32,16 @@ const AMBIENTES = {
 // Opções: "local" | "oracle_vm" | "tunel_teste" | "hostinger"
 const AMBIENTE_ATIVO = "local";
 
-// Exportação final da URL da API utilizada por todo o frontend
-export const BASE_API_URL = ENV_API_URL || AMBIENTES[AMBIENTE_ATIVO] || AMBIENTES.local;
+// Exportação final da URL da API utilizada por todo o frontend (sem barra final)
+const rawUrl = ENV_API_URL || AMBIENTES[AMBIENTE_ATIVO] || AMBIENTES.local;
+export const BASE_API_URL = rawUrl.replace(/\/+$/, "");
+
+// Helper seguro para montar URL de imagem sem barra duplicada
+export const getImagemUrl = (caminho) => {
+    if (!caminho) return null;
+    if (caminho.startsWith("http://") || caminho.startsWith("https://")) return caminho;
+    const cleanPath = caminho.startsWith("/") ? caminho : `/${caminho}`;
+    return `${BASE_API_URL}${cleanPath}`;
+};
 
 console.log(`[Cardápio Boteco] Conectado na API: ${BASE_API_URL}`);

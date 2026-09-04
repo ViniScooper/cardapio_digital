@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import api, { API_BASE_URL as API_URL } from "../services/api";
+import { getImagemUrl } from "../config/environment";
 
 const ICONES_SUGERIDOS = ["🍽️","🍕","🍔","🍟","🥩","🍗","🐟","🦐","🥗","🍲","🥓","🧀","🌿","🍺","🍹","🥤","☕","🍰","🎂","🍦","🎉","🍴","⭐","🔥","💎"];
 
@@ -148,7 +149,7 @@ export default function Admin() {
             selo:            prato.selo || "",
             destaque_manual: prato.destaque_manual || ""
         });
-        setPreview(prato.imagem ? `${API_URL}${prato.imagem}` : null);
+        setPreview(getImagemUrl(prato.imagem));
         setImagem(null);
         setErro("");
         setMensagem("");
@@ -739,7 +740,7 @@ export default function Admin() {
                                 {pratosFiltrados.map((prato) => (
                                     <div key={prato.id} className="admin-item" style={{ ...styles.item, ...(prato.id === editandoId ? styles.itemEditando : {}) }}>
                                         <div className="admin-item-left" style={{ display: "flex", alignItems: "center", gap: "0.8rem", flex: 1, minWidth: 0 }}>
-                                            {prato.imagem ? <img src={`${API_URL}${prato.imagem}`} alt={prato.nome} style={styles.itemThumb} />
+                                            {prato.imagem ? <img src={getImagemUrl(prato.imagem)} alt={prato.nome} style={styles.itemThumb} />
                                                            : <div style={styles.itemEmojiBg}>{getEmoji(prato.nome)}</div>}
                                             <div style={styles.itemInfo}>
                                                 <p style={styles.itemNome}>{prato.nome}</p>

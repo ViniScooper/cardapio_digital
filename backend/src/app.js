@@ -34,7 +34,13 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// Servir arquivos estáticos de upload com headers permissivos contra bloqueios de CORS/ORB
+app.use("/uploads", (req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+}, express.static(path.join(__dirname, "../uploads")));
 
 app.use("/auth",       authRoutes);
 app.use("/pratos",     pratoRoutes);
