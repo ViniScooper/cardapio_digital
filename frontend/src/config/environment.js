@@ -22,8 +22,7 @@ const AMBIENTES = {
     oracle_vm: "http://129.148.25.100:3001",
 
     // 3. Túnel gratuito Cloudflare / Ngrok (para testes externos sem pagar domínio)
-    // Ex: "https://boteco-api.trycloudflare.com"
-    tunel_teste: "https://api-boteco.trycloudflare.com",
+    tunel_teste: "https://peers-discussed-gadgets-metres.trycloudflare.com",
 
     // 4. Hostinger (caso use VPS ou subdomínio na Hostinger)
     hostinger: "https://api.botecodosivirino.com.br"
