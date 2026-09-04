@@ -97,4 +97,39 @@ const login = (req, res) => {
     });
 };
 
-module.exports = { registrar, login };
+// GET /auth/usuarios (Listar usuários cadastrados - Apenas Admin)
+const listarUsuarios = (req, res) => {
+    db.query("SELECT id, nome, email, role, criado_em FROM usuario ORDER BY id ASC", (erro, resultados) => {
+        if (erro) return res.status(500).json({ erro: erro.message });
+        res.json(resultados);
+    });
+};
+
+// PUT /auth/alterar-senha (Alterar senha do próprio usuário logado)
+const alterarSenha = async (req, res) => {
+    const { senhaAtual, novaSenha } = req.body;
+    const userId = req.usuario.id;
+
+    if (!senhaAtual || !novaSenha) {
+        return res.status(400).json({ erro: "Informe a senha atual e a nova senha." });
+    }
+
+    db.query("SELECT * FROM usuario WHERE id = ?", [userId], async (erro, resultados) => {
+        if (erro) return res.status(500).json({ erro: erro.message });
+        if (resultados.length === 0) return res.status(404).json({ erro: "Usuário não encontrado." });
+
+        const usuario = resultados[0];
+        const senhaCorreta = await bcrypt.compare(senhaAtual, usuario.senha);
+        if (!senhaCorreta) {
+            return res.status(401).json({ erro: "Senha atual incorreta." });
+        }
+
+        const novaSenhaHash = await bcrypt.hash(novaSenha, 10);
+        db.query("UPDATE usuario SET senha = ? WHERE id = ?", [novaSenhaHash, userId], (err) => {
+            if (err) return res.status(500).json({ erro: err.message });
+            res.json({ mensagem: "Senha alterada com sucesso!" });
+        });
+    });
+};
+
+module.exports = { registrar, login, listarUsuarios, alterarSenha };
