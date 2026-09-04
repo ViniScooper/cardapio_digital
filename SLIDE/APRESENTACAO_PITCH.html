@@ -34,6 +34,15 @@
     .dark-card { background:#24201d; border-left:5px solid var(--gold); padding:1.5rem 1.8rem; margin-top:2rem; max-width:650px; }
     .dark-card strong { display:block; font-size:1.1rem; color:#fff; margin-bottom:.45rem; }
     .dark-card span { color:var(--muted); }
+    .investment-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.9rem; margin-top:1.7rem; max-width:760px; }
+    .investment-item { background:#25211e; border-top:3px solid var(--gold); padding:1.05rem 1.15rem; }
+    .investment-item:nth-child(2) { border-top-color:#e55b48; }
+    .investment-item:nth-child(3) { border-top-color:#78b89a; }
+    .investment-item:nth-child(4) { border-top-color:#8fa8c7; }
+    .investment-item strong { display:block; color:#fff; font-size:1rem; margin:.45rem 0 .25rem; }
+    .investment-item span { display:block; color:#afa397; font-size:.82rem; line-height:1.35; }
+    .investment-price { color:var(--gold) !important; font-family:'Playfair Display', Georgia, serif; font-size:1.45rem !important; font-weight:700; }
+    .investment-note { color:#bcb0a4; font-size:.8rem; margin-top:1rem; }
     .screen { width:56vw; max-width:800px; height:69vh; object-fit:cover; object-position:top left; border:7px solid #29231e; border-radius:8px; box-shadow:0 22px 50px rgba(0,0,0,.38); }
     .screen.tall { object-fit:contain; background:#f4eee4; }
     .feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:2.5rem; max-width:980px; }
@@ -104,13 +113,28 @@
     <section class="slide split">
       <img class="screen tall" src="07-qr-code.png" alt="QR Code do cardápio">
       <div class="copy"><div class="eyebrow">Distribuição</div><h2>Uma mesa. Um QR Code. <span class="accent">Todo o cardápio.</span></h2><p>O QR Code leva o cliente direto para a experiência digital. Ele pode ser impresso nas mesas, divulgado nas redes sociais ou compartilhado por mensagem.</p><div class="dark-card"><strong>Do salão para a tela em segundos.</strong><span>Menos espera, menos papel e mais autonomia para o cliente.</span></div></div>
-      <div class="source">Acesso mobile e QR Code</div><div class="number">06 / 07</div>
+      <div class="source">Acesso mobile e QR Code</div><div class="number">06 / 08</div>
       <aside class="notes">O QR Code fecha o ciclo: o sistema não fica escondido em um endereço. Ele está presente no ponto exato em que o cliente decide o que consumir.</aside>
+    </section>
+
+    <section class="slide">
+      <div class="copy"><div class="eyebrow">Investimento transparente</div><h2>Você não compra só um site. <span class="accent">Compra uma operação.</span></h2><p>O valor considera as horas de construção, a estratégia do cardápio, a implantação e a infraestrutura. O suporte mensal mantém a aplicação acompanhada depois da entrega.</p>
+        <div class="investment-grid">
+          <div class="investment-item"><div>⚙️</div><strong>Desenvolvimento</strong><span class="investment-price">R$ 4.050,00</span><span>Estimativa de 90 horas a R$ 45/h.</span></div>
+          <div class="investment-item"><div>🚀</div><strong>Implantação</strong><span class="investment-price">R$ 600,00</span><span>Servidor, Nginx, HTTPS, migração e testes.</span></div>
+          <div class="investment-item"><div>☁️</div><strong>VPS por 12 meses</strong><span class="investment-price">R$ 395,88</span><span>Hostinger KVM 1, pago diretamente pelo cliente.</span></div>
+          <div class="investment-item"><div>🛠️</div><strong>Suporte mensal opcional</strong><span class="investment-price">R$ 150 ou R$ 250/mês</span><span>Básico ou recomendado, conforme a necessidade.</span></div>
+        </div>
+        <div class="dark-card"><strong>Investimento inicial estimado: R$ 5.045,88</strong><span>Suporte mensal não está incluído nesse total e só é contratado se o cliente desejar.</span></div>
+        <div class="investment-note">A hospedagem fica em nome do cliente. Valores podem variar na renovação e conforme o checkout.</div>
+      </div>
+      <div class="source">Composição do preço</div><div class="number">07 / 08</div>
+      <aside class="notes">Aqui eu explico o preço com transparência. O desenvolvimento é o maior componente porque envolve aproximadamente 90 horas. A implantação é cobrada uma vez. A VPS é infraestrutura paga diretamente pelo cliente. O suporte mensal é opcional: 150 reais para manutenção básica ou 250 reais com monitoramento e até 4 horas de suporte por mês.</aside>
     </section>
 
     <section class="slide closing">
       <div class="copy"><img class="mark" src="../img/logo.png" alt="Logo Boteco do Sivirino"><div class="eyebrow">Encerramento</div><div class="quote">“Tecnologia para deixar o atendimento mais simples, o cardápio mais vivo e a experiência mais <em>arretada</em>.”</div><p>Boteco do Sivirino · Cardápio digital e gestão em tempo real</p><span class="pill">Obrigado!</span></div>
-      <div class="source">Perguntas?</div><div class="number">07 / 07</div>
+      <div class="source">Perguntas?</div><div class="number">08 / 08</div>
       <aside class="notes">Para encerrar, reforço o valor entregue: uma experiência melhor para o cliente e uma ferramenta prática para o estabelecimento. Depois, abro para perguntas ou faço a demonstração ao vivo.</aside>
     </section>
   </main>

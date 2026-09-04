@@ -28,7 +28,10 @@ Nao foi encontrado bloqueio critico durante esta rodada. Existem melhorias recom
 | QA-10 | Painel em viewport de 390 px | PASSOU | Painel abriu, manteve indicadores e sem overflow horizontal relevante |
 | QA-11 | Build de producao | PASSOU | `npm run build` concluiu com 95 modulos transformados |
 | QA-12 | Apresentacao local | PASSOU | 7 slides e 7 imagens carregadas no HTML do pitch |
-| QA-13 | Upload de imagem no deploy Vercel | PARCIAL | Backend aceitou PNG e criou URL, mas navegador bloqueou a imagem ao carregar `/uploads` |
+| QA-13 | Upload e carregamento de imagem no deploy Vercel | PASSOU | Upload temporario foi aceito, imagem apareceu no admin e as imagens existentes carregaram no cardapio |
+| QA-14 | Reordenacao de categorias no deploy | PASSOU | `PUT /categorias/reordenar` respondeu 200, a ordem persistiu e foi restaurada |
+| QA-15 | Carrinho e validacao do pedido | PASSOU | Prato foi adicionado, modal abriu e campos obrigatorios impediram envio incompleto |
+| QA-16 | Happy Hour, QR Code e Avaliacoes | PASSOU | Configuracao abriu, QR Code apontou para a Vercel e link do Google foi encontrado |
 
 ## Achados e riscos
 
@@ -88,15 +91,15 @@ Os `package.json` nao possuem script de teste. A validacao atual foi manual e po
 
 **Prioridade:** Alta  
 **Tipo:** bug funcional / deploy  
-**Status:** Reproduzido no endereco `https://cardapiodigital-gamma.vercel.app`.
+**Status:** Resolvido no estado atual do deploy; manter monitoramento.
 
-O login administrativo funcionou e o upload de uma imagem PNG foi aceito: o total passou temporariamente de 134 para 135 pratos e o registro recebeu um caminho `/uploads/prato-...png`. Entretanto, as imagens exibidas pelo cardapio e pelo painel apontaram para `https://peers-discussed-gadgets-metres.trycloudflare.com//uploads/...` e o navegador registrou `ERR_BLOCKED_BY_ORB`; os elementos ficaram com `naturalWidth = 0`.
+Em uma rodada anterior, o login administrativo funcionou e o upload de uma imagem PNG foi aceito, mas as imagens apontaram para o tunel com barra duplicada e o navegador registrou `ERR_BLOCKED_BY_ORB`. No teste de 04/09/2026, o upload temporario foi aceito, as imagens do cardapio carregaram com `naturalWidth > 0` e a URL passou a aparecer sem a barra duplicada.
 
-**Impacto:** o cliente nao visualiza as fotos dos pratos no deploy da Vercel, embora o arquivo seja gravado no backend.
+**Impacto anterior:** o cliente nao visualizava as fotos dos pratos no deploy da Vercel, embora o arquivo fosse gravado no backend.
 
-**Causa provavel:** a aplicacao esta usando um backend temporario por Cloudflare Tunnel e construindo URLs de upload com barra duplicada (`//uploads`). Tambem e necessario confirmar que o endpoint entrega imagens com `Content-Type` correto e headers compativeis com acesso cross-origin.
+**Causa provavel anterior:** a aplicacao usava um backend temporario por Cloudflare Tunnel e construia URLs de upload com barra duplicada (`//uploads`).
 
-**Melhoria sugerida:** usar uma URL de API sem barra final, normalizar a montagem das URLs (`${API_URL.replace(/\\/$/, "")}${path}`), testar `/uploads/arquivo` com resposta `200` e `Content-Type: image/*`, e preferir servir frontend, API e uploads sob o mesmo dominio HTTPS por Nginx. Para producao, migrar uploads para armazenamento persistente, como volume da VPS ou Supabase Storage; nao depender do filesystem efemero da Vercel.
+**Melhoria sugerida:** manter a normalizacao das URLs, testar `/uploads/arquivo` com resposta `200` e `Content-Type: image/*`, e preferir servir frontend, API e uploads sob o mesmo dominio HTTPS por Nginx. Para producao, migrar uploads para armazenamento persistente, como volume da VPS ou Supabase Storage; nao depender do filesystem efemero da Vercel.
 
 ## Melhorias de produto recomendadas
 

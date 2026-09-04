@@ -35,10 +35,19 @@ app.use(cors({
 
 app.use(express.json());
 
+// Dados do cardápio e do painel devem sempre refletir o estado atual do banco.
+app.use(["/auth", "/pratos", "/categorias", "/config", "/selos"], (req, res, next) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    next();
+});
+
 // Servir arquivos estáticos de upload com headers permissivos contra bloqueios de CORS/ORB
 app.use("/uploads", (req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     next();
 }, express.static(path.join(__dirname, "../uploads")));
 

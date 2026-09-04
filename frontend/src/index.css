@@ -73,6 +73,42 @@ a {
   box-shadow: 0 4px 12px rgba(17, 17, 17, 0.18);
 }
 
+.cat-nav-shell {
+  position: sticky;
+  top: 70px;
+  z-index: 90;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid #e8e0d5;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  backdrop-filter: blur(10px);
+}
+
+.cat-nav-arrow {
+  flex: 0 0 34px;
+  align-self: center;
+  height: 34px;
+  margin: 0 0.45rem;
+  border: 1px solid rgba(17, 17, 17, 0.16);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+  color: rgba(17, 17, 17, 0.62);
+  font-size: 1.65rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(17, 17, 17, 0.08);
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.cat-nav-arrow:hover {
+  background: rgba(232, 184, 75, 0.9);
+  border-color: #e8b84b;
+  color: #111;
+  transform: scale(1.08);
+}
+
 .cat-nav-top {
   display: inline-flex;
   align-items: center;
@@ -101,6 +137,16 @@ a {
 .cat-nav-bar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.cat-nav-bar {
+  position: static !important;
+  top: auto !important;
+  flex: 0 1 1100px;
+  min-width: 0;
+  background: transparent !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
 }
 
 /* ── BOTÃO E DRAWER DE CATEGORIAS NO DESKTOP ── */

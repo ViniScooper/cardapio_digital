@@ -2,7 +2,7 @@
 // src/pages/Home.jsx — Cardápio com seções e Happy Hour (Responsivo)
 // ============================================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api, { API_BASE_URL as API_URL } from "../services/api";
 import { getImagemUrl } from "../config/environment";
 
@@ -43,6 +43,11 @@ export default function Home() {
     const [erro,          setErro]          = useState("");
     const [menuCatAberto, setMenuCatAberto] = useState(false);
     const [categoriaAtiva, setCategoriaAtiva] = useState("");
+    const categoriaBarraRef = useRef(null);
+
+    const moverCategorias = (direcao) => {
+        categoriaBarraRef.current?.scrollBy({ left: direcao * 280, behavior: "smooth" });
+    };
 
     // ── ESTADO DO CARRINHO DE PEDIDOS VIA WHATSAPP ──
     const [carrinho,      setCarrinho]      = useState(() => {
@@ -308,8 +313,10 @@ export default function Home() {
                     )}
 
                     {/* ── BARRA FIXA DE NAVEGAÇÃO RÁPIDA POR CATEGORIA (EXCLUSIVA MOBILE) ── */}
-                    <div className="cat-nav-bar" style={styles.catNavBar}>
-                        <div style={styles.catNavContainer}>
+                    <div className="cat-nav-shell">
+                        <button type="button" className="cat-nav-arrow cat-nav-arrow-left" onClick={() => moverCategorias(-1)} aria-label="Ver categorias anteriores">‹</button>
+                        <div ref={categoriaBarraRef} className="cat-nav-bar" style={styles.catNavBar}>
+                            <div style={styles.catNavContainer}>
                             {nomesCategoria.map((cat) => {
                                 const idAlvo = criarIdCategoria(cat);
                                 return (
@@ -355,7 +362,9 @@ export default function Home() {
                             >
                                 ↑ <span>Topo</span>
                             </button>
+                            </div>
                         </div>
+                        <button type="button" className="cat-nav-arrow cat-nav-arrow-right" onClick={() => moverCategorias(1)} aria-label="Ver próximas categorias">›</button>
                     </div>
 
                     <div id="cardapio">
