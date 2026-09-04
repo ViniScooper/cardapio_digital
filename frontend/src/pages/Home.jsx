@@ -164,8 +164,7 @@ export default function Home() {
         if (!nomesCategoria.length) return;
 
         setCategoriaAtiva(criarIdCategoria(nomesCategoria[0]));
-        const secoes = nomesCategoria
-            .map(criarIdCategoria)
+        const secoes = [...nomesCategoria.map(criarIdCategoria), "happy-hour", "avaliacoes"]
             .map(id => document.getElementById(id))
             .filter(Boolean);
         const atualizarCategoriaAtiva = () => {
@@ -337,6 +336,16 @@ export default function Home() {
                                     <span>Happy Hour</span>
                                 </a>
                             )}
+
+                            <a
+                                href="#avaliacoes"
+                                className={`cat-nav-item ${categoriaAtiva === "avaliacoes" ? "cat-nav-item-active" : ""}`}
+                                style={{ ...styles.catNavItem, borderColor: "#fbbc04", color: "#8a6500" }}
+                                aria-current={categoriaAtiva === "avaliacoes" ? "location" : undefined}
+                            >
+                                <span>⭐</span>
+                                <span>Avaliações</span>
+                            </a>
 
                             <button
                                 type="button"
@@ -635,7 +644,7 @@ export default function Home() {
                     )}
 
                     {/* ── SEÇÃO DE AVALIAÇÕES DO GOOGLE (PROVA SOCIAL) ── */}
-                    <section style={{ background: "#ffffff", padding: "4rem 1.5rem", borderTop: "1px solid #e8e0d5" }}>
+                    <section id="avaliacoes" className="avaliacoes-section" style={{ background: "#ffffff", padding: "4rem 1.5rem", borderTop: "1px solid #e8e0d5" }}>
                         <div style={{ maxWidth: "1100px", margin: "0 auto", textAlign: "center" }}>
                             {/* Selo Google */}
                             <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "#f8f9fa", padding: "0.5rem 1.2rem", borderRadius: "50px", border: "1px solid #e0e0e0", marginBottom: "1rem" }}>
