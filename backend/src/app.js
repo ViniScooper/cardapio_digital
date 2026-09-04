@@ -46,4 +46,13 @@ app.get("/", (req, res) => {
     res.json({ mensagem: "API do Boteco do Sivirino funcionando! 🍺" });
 });
 
+// Middleware de tratamento de erros (ex: erro de upload do Multer)
+app.use((err, req, res, next) => {
+    if (err) {
+        console.error("❌ Erro capturado:", err.message);
+        return res.status(400).json({ erro: err.message || "Erro no processamento da requisição ou imagem." });
+    }
+    next();
+});
+
 module.exports = app;
