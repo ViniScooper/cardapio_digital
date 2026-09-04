@@ -78,11 +78,13 @@ db.connect(async (err) => {
             )
         `);
 
-        // Inserir Admin se não existir (senha: admin123)
+        // Inserir ou atualizar Admin com senha válida 'admin123'
+        const senhaAdminHash = "$2a$10$QJVjL0MMpxDBLTkd21wRbO66bwfBokxJ2diWRrqhBnNvQnyLCN5dG";
         await query(`
-            INSERT IGNORE INTO usuario (id, nome, email, senha, role) 
-            VALUES (1, 'Administrador', 'admin@boteco.com', '$2a$10$vI8aWBnW3fID.ZQ4/ZOIj.qU5vY3K5x1hT.0aY844hXq9E3l9Geq6', 'admin')
-        `);
+            INSERT INTO usuario (id, nome, email, senha, role) 
+            VALUES (1, 'Administrador', 'admin@boteco.com', ?, 'admin')
+            ON DUPLICATE KEY UPDATE senha = VALUES(senha), role = 'admin'
+        `, [senhaAdminHash]);
 
         // Inserir Configuração se não existir
         await query(`
