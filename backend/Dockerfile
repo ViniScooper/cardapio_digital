@@ -11,8 +11,11 @@ RUN npm install --omit=dev
 # Copia o código fonte do backend
 COPY . .
 
+# Permissão de execução no script de inicialização
+RUN chmod +x start.sh
+
 # Expõe a porta do backend
 EXPOSE 3001
 
-# Inicia a aplicação
-CMD ["node", "server.js"]
+# Inicia as migrações automáticas e o servidor
+CMD ["./start.sh"]
