@@ -44,7 +44,6 @@ export default function Admin() {
     const [aba,        setAba]        = useState("pratos");
     const [pratos,     setPratos]     = useState([]);
     const [categorias, setCategorias] = useState([]);
-    const [matrizEng,  setMatrizEng]  = useState(null);
     const [loading,    setLoading]    = useState(true);
     const [enviando,   setEnviando]   = useState(false);
     const [mensagem,   setMensagem]   = useState("");
@@ -68,10 +67,6 @@ export default function Admin() {
     const [seloIcone,    setSeloIcone]    = useState("🔥");
     const [seloCor,      setSeloCor]      = useState("#e8b84b");
     const [enviandoSelo, setEnviandoSelo] = useState(false);
-
-    // Estados da aba Engenharia de Cardápio
-    const [buscaEng,        setBuscaEng]        = useState("");
-    const [filtroQuadrante, setFiltroQuadrante] = useState("todos");
 
     // Configuração de Happy Hour
     const [configHH,   setConfigHH]   = useState({
@@ -108,14 +103,12 @@ export default function Admin() {
             api.get("/categorias"),
             api.get("/config"),
             api.get("/selos").catch(() => ({ data: [] })),
-            api.get("/pratos/matriz").catch(() => ({ data: null })),
             api.get("/config/delivery/bairros/admin").catch(() => ({ data: [] }))
         ])
-            .then(([rPratos, rCats, rConfig, rSelos, rMatriz, rBairros]) => {
+            .then(([rPratos, rCats, rConfig, rSelos, rBairros]) => {
                 setPratos(rPratos.data);
                 setCategorias(rCats.data);
                 if (rSelos?.data) setSelos(rSelos.data);
-                if (rMatriz?.data) setMatrizEng(rMatriz.data);
                 if (rBairros?.data) setBairrosDelivery(rBairros.data);
                 if (rConfig?.data) {
                     setConfigHH({
@@ -452,19 +445,12 @@ export default function Admin() {
                 <div className="admin-stats" style={styles.stats}>
                     {(() => {
                         const totalPratos = pratos.length;
-                        const comCusto = pratos.filter(p => p.custo && parseFloat(p.custo) > 0).length;
-                        const pctCusto = totalPratos > 0 ? Math.round((comCusto / totalPratos) * 100) : 0;
 
                         return [
                             { num: totalPratos,                             label: "Pratos",         action: () => setAba("pratos") },
                             { num: categorias.length,                       label: "Categorias",     action: () => setAba("categorias") },
                             { num: pratos.filter(p => p.happy_hour).length, label: "Happy Hour",     action: () => setAba("happyhour") },
-                            { 
-                                num: `${pctCusto}%`, 
-                                label: `Custos Cadastrados (${comCusto}/${totalPratos})`, 
-                                action: () => setAba("engenharia"),
-                                destaque: pctCusto < 50
-                            },
+                            { num: selos.length,                            label: "Selos Ativos",   action: () => setAba("selos") },
                         ].map((s, i) => (
                             <div 
                                 key={i} 
@@ -489,7 +475,6 @@ export default function Admin() {
                 {/* Abas */}
                 <div className="admin-abas" style={styles.abas}>
                     <button onClick={() => setAba("pratos")}     className="admin-aba" style={{ ...styles.aba, ...(aba === "pratos"     ? styles.abaAtiva : {}) }}>🍽️ Pratos</button>
-                    <button onClick={() => setAba("engenharia")} className="admin-aba" style={{ ...styles.aba, ...(aba === "engenharia" ? styles.abaAtiva : {}) }}>📊 Engenharia</button>
                     <button onClick={() => setAba("selos")}      className="admin-aba" style={{ ...styles.aba, ...(aba === "selos"      ? styles.abaAtiva : {}) }}>🏷️ Selos / Flags</button>
                     <button onClick={() => setAba("categorias")} className="admin-aba" style={{ ...styles.aba, ...(aba === "categorias" ? styles.abaAtiva : {}) }}>📂 Categorias</button>
                     <button onClick={() => setAba("happyhour")}  className="admin-aba" style={{ ...styles.aba, ...(aba === "happyhour"  ? styles.abaAtiva : {}) }}>⚡ Happy Hour</button>
@@ -497,200 +482,6 @@ export default function Admin() {
                     <button onClick={() => setAba("qrcode")}     className="admin-aba" style={{ ...styles.aba, ...(aba === "qrcode"     ? styles.abaAtiva : {}) }}>📱 QR Code</button>
                 </div>
             </div>
-
-            {/* ── ABA ENGENHARIA DE CARDÁPIO ── */}
-            {aba === "engenharia" && (
-                <div className="admin-body" style={{ ...styles.body, gridTemplateColumns: "1fr" }}>
-                    <div className="admin-card" style={styles.card}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
-                            <div>
-                                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.6rem", fontWeight: "700", color: "#1a1a1a", margin: 0 }}>
-                                    🎯 Matriz de Engenharia de Cardápio (Kasavana & Smith)
-                                </h2>
-                                <p style={{ color: "#777", fontSize: "0.85rem", marginTop: "0.3rem" }}>
-                                    Classificação automática baseada na margem de lucro e no interesse/popularidade dos pratos.
-                                </p>
-                            </div>
-                            <button onClick={carregarTudo} style={{ ...styles.btnCancelar, padding: "0.5rem 1rem", fontSize: "0.85rem" }}>
-                                🔄 Atualizar Dados
-                            </button>
-                        </div>
-
-                        {/* Cards Resumo dos 4 Quadrantes */}
-                        {matrizEng?.resumo && (
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
-                                <div style={{ background: "#fffdf5", border: "2px solid #e8b84b", borderRadius: "12px", padding: "1.2rem" }}>
-                                    <span style={{ fontSize: "1.8rem" }}>⭐</span>
-                                    <h3 style={{ fontSize: "1.1rem", color: "#b38210", margin: "0.4rem 0" }}>Estrelas ({matrizEng.resumo.estrelas})</h3>
-                                    <p style={{ fontSize: "0.78rem", color: "#666" }}>Alta Margem + Alta Venda. Destaque máximo garantido no cardápio.</p>
-                                </div>
-                                <div style={{ background: "#f5fbf6", border: "2px solid #2e7d32", borderRadius: "12px", padding: "1.2rem" }}>
-                                    <span style={{ fontSize: "1.8rem" }}>🐄</span>
-                                    <h3 style={{ fontSize: "1.1rem", color: "#2e7d32", margin: "0.4rem 0" }}>Vacas Leiteiras ({matrizEng.resumo.vacas_leiteiras})</h3>
-                                    <p style={{ fontSize: "0.78rem", color: "#666" }}>Baixa Margem + Alta Venda. Mantidos visíveis, já vendem por conta própria.</p>
-                                </div>
-                                <div style={{ background: "#fbf6fd", border: "2px solid #8e44ad", borderRadius: "12px", padding: "1.2rem" }}>
-                                    <span style={{ fontSize: "1.8rem" }}>❓</span>
-                                    <h3 style={{ fontSize: "1.1rem", color: "#8e44ad", margin: "0.4rem 0" }}>Enigmas ({matrizEng.resumo.enigmas})</h3>
-                                    <p style={{ fontSize: "0.78rem", color: "#666" }}>Alta Margem + Baixa Venda. Oportunidade de ouro: precisam de fotos e selos.</p>
-                                </div>
-                                <div style={{ background: "#fafafa", border: "2px solid #999", borderRadius: "12px", padding: "1.2rem" }}>
-                                    <span style={{ fontSize: "1.8rem" }}>🐌</span>
-                                    <h3 style={{ fontSize: "1.1rem", color: "#555", margin: "0.4rem 0" }}>Abacaxis ({matrizEng.resumo.abacaxis})</h3>
-                                    <p style={{ fontSize: "0.78rem", color: "#666" }}>Baixa Margem + Pouca Procura. Avaliar reformulação de receita ou preço.</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Barra de Pesquisa e Filtros */}
-                        <div style={{ display: "flex", gap: "0.8rem", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", marginBottom: "1rem" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: "1 1 280px" }}>
-                                <input
-                                    type="text"
-                                    placeholder="🔍 Pesquisar prato ou categoria..."
-                                    value={buscaEng}
-                                    onChange={(e) => setBuscaEng(e.target.value)}
-                                    style={{
-                                        width: "100%",
-                                        padding: "0.65rem 1rem",
-                                        borderRadius: "10px",
-                                        border: "1.5px solid #e0d9d0",
-                                        fontSize: "0.9rem",
-                                        outline: "none",
-                                        background: "#fff"
-                                    }}
-                                />
-                                {buscaEng && (
-                                    <button 
-                                        onClick={() => setBuscaEng("")} 
-                                        style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: "1rem" }}
-                                    >
-                                        ✕
-                                    </button>
-                                )}
-                            </div>
-
-                            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                                {[
-                                    { id: "todos", label: "Todos" },
-                                    { id: "estrela", label: "⭐ Estrelas" },
-                                    { id: "vaca_leiteira", label: "🐄 Vacas" },
-                                    { id: "enigma", label: "❓ Enigmas" },
-                                    { id: "abacaxi", label: "🐌 Abacaxis" },
-                                    { id: "sem_custo", label: "⚠️ Sem Custo" },
-                                ].map(f => (
-                                    <button
-                                        key={f.id}
-                                        type="button"
-                                        onClick={() => setFiltroQuadrante(f.id)}
-                                        style={{
-                                            background: filtroQuadrante === f.id ? "#111" : "#faf8f5",
-                                            color: filtroQuadrante === f.id ? "#e8b84b" : "#666",
-                                            border: "1px solid #e0d9d0",
-                                            padding: "0.4rem 0.8rem",
-                                            borderRadius: "20px",
-                                            fontSize: "0.78rem",
-                                            fontWeight: "600",
-                                            cursor: "pointer"
-                                        }}
-                                    >
-                                        {f.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Tabela com Barra de Rolagem Vertical e Horizontal */}
-                        {(() => {
-                            const pratosFiltradosEng = pratos.filter(p => {
-                                const matchBusca = p.nome.toLowerCase().includes(buscaEng.toLowerCase()) || 
-                                                   (p.categoria && p.categoria.toLowerCase().includes(buscaEng.toLowerCase()));
-                                if (!matchBusca) return false;
-
-                                if (filtroQuadrante === "todos") return true;
-                                if (filtroQuadrante === "sem_custo") return !p.custo || parseFloat(p.custo) <= 0;
-                                return p.classificacao === filtroQuadrante;
-                            });
-
-                            return (
-                                <>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem" }}>
-                                        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.1rem", fontWeight: "700", margin: 0 }}>
-                                            📋 Mostrando {pratosFiltradosEng.length} de {pratos.length} itens
-                                        </h3>
-                                        <span style={{ fontSize: "0.78rem", color: "#888" }}>Role para baixo para ver mais</span>
-                                    </div>
-
-                                    <div style={{
-                                        maxHeight: "520px",
-                                        overflowY: "auto",
-                                        overflowX: "auto",
-                                        border: "1.5px solid #e8e0d5",
-                                        borderRadius: "12px",
-                                        background: "#fff"
-                                    }}>
-                                        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
-                                            <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                                                <tr style={{ background: "#f5f0e8", borderBottom: "2px solid #e0d9d0" }}>
-                                                    <th style={{ padding: "0.85rem 1rem", minWidth: "180px" }}>Prato</th>
-                                                    <th style={{ padding: "0.85rem", minWidth: "130px" }}>Categoria</th>
-                                                    <th style={{ padding: "0.85rem", minWidth: "100px" }}>Preço</th>
-                                                    <th style={{ padding: "0.85rem", minWidth: "110px" }}>Custo (CMV)</th>
-                                                    <th style={{ padding: "0.85rem", minWidth: "90px" }}>Margem</th>
-                                                    <th style={{ padding: "0.85rem", minWidth: "130px" }}>Classificação</th>
-                                                    <th style={{ padding: "0.85rem", minWidth: "120px" }}>Selo Ativo</th>
-                                                    <th style={{ padding: "0.85rem 1rem", textAlign: "right", minWidth: "90px" }}>Ações</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {pratosFiltradosEng.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan={8} style={{ padding: "3rem", textAlign: "center", color: "#999" }}>
-                                                            Nenhum prato encontrado para os filtros selecionados.
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    pratosFiltradosEng.map((p) => {
-                                                        const margem = (p.preco && p.custo) ? (((p.preco - p.custo) / p.preco) * 100).toFixed(1) : null;
-                                                        return (
-                                                            <tr key={p.id} style={{ borderBottom: "1px solid #f0ebe3" }}>
-                                                                <td style={{ padding: "0.75rem 1rem", fontWeight: "600" }}>{p.nome}</td>
-                                                                <td style={{ padding: "0.75rem", color: "#777" }}>{p.categoria}</td>
-                                                                <td style={{ padding: "0.75rem", fontWeight: "700" }}>R$ {parseFloat(p.preco).toFixed(2).replace(".", ",")}</td>
-                                                                <td style={{ padding: "0.75rem", color: p.custo ? "#333" : "#bbb" }}>
-                                                                    {p.custo ? `R$ ${parseFloat(p.custo).toFixed(2).replace(".", ",")}` : "Sem custo"}
-                                                                </td>
-                                                                <td style={{ padding: "0.75rem", fontWeight: "600", color: margem > 55 ? "#2e7d32" : margem ? "#c0392b" : "#aaa" }}>
-                                                                    {margem ? `${margem}%` : "—"}
-                                                                </td>
-                                                                <td style={{ padding: "0.75rem" }}>
-                                                                    {p.classificacao === "estrela" && <span style={{ background: "#fef8e7", border: "1px solid #e8b84b", color: "#b38210", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>⭐ Estrela</span>}
-                                                                    {p.classificacao === "vaca_leiteira" && <span style={{ background: "#e8f5e9", color: "#2e7d32", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>🐄 Vaca Leiteira</span>}
-                                                                    {p.classificacao === "enigma" && <span style={{ background: "#f3e5f5", color: "#7b1fa2", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "700" }}>❓ Enigma</span>}
-                                                                    {p.classificacao === "abacaxi" && <span style={{ background: "#f5f5f5", color: "#666", padding: "0.2rem 0.6rem", borderRadius: "12px", fontSize: "0.75rem" }}>🐌 Abacaxi</span>}
-                                                                    {!p.classificacao && <span style={{ color: "#aaa", fontSize: "0.75rem" }}>Sem dados</span>}
-                                                                </td>
-                                                                <td style={{ padding: "0.75rem" }}>
-                                                                    {p.selo ? <span style={{ background: "#e8b84b", color: "#111", padding: "0.2rem 0.5rem", borderRadius: "8px", fontSize: "0.72rem", fontWeight: "700" }}>{p.selo}</span> : <span style={{ color: "#ccc" }}>—</span>}
-                                                                </td>
-                                                                <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
-                                                                    <button onClick={() => iniciarEdicao(p)} style={{ ...styles.btnEditar, padding: "0.3rem 0.65rem", fontSize: "0.8rem" }}>
-                                                                        ✏️ Ajustar
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </>
-                            );
-                        })()}
-                    </div>
-                </div>
-            )}
 
             {/* ── ABA PRATOS ── */}
             {aba === "pratos" && (
@@ -795,17 +586,6 @@ export default function Admin() {
                                 </div>
                             </div>
 
-                            <div style={styles.grupo}>
-                                <label style={styles.label}>Classificação Estratégica (Engenharia de Cardápio)</label>
-                                <select style={{ ...styles.input, cursor: "pointer" }} value={form.destaque_manual} onChange={(e) => setForm(f => ({ ...f, destaque_manual: e.target.value }))}>
-                                    <option value="">Automático (Calculado pela Matriz Margem × Vendas)</option>
-                                    <option value="estrela">⭐ Estrela (Alta Margem + Alto Destaque Visual)</option>
-                                    <option value="enigma">❓ Enigma (Alta Margem + Chamar Mais Atenção)</option>
-                                    <option value="vaca_leiteira">🐄 Vaca Leiteira (Vende Muito / Margem Baixa)</option>
-                                    <option value="abacaxi">🐌 Abacaxi (Baixa Margem / Avaliar)</option>
-                                    <option value="nenhum">Nenhum Destaque Especial</option>
-                                </select>
-                            </div>
 
                             {/* Toggle Happy Hour */}
                             <div style={styles.hhToggle} onClick={() => setForm(f => ({ ...f, happy_hour: !f.happy_hour }))}>
