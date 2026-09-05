@@ -63,10 +63,21 @@ export default function Home() {
     const [dadosCliente,  setDadosCliente]  = useState({
         nome: "",
         mesa: "",
+        cep: "",
+        logradouro: "",
+        numero: "",
+        complemento: "",
+        bairro: "",
+        cidade: "Recife",
         endereco: "",
         pagamento: "Cartão (na mesa / entrega)",
         observacao: ""
     });
+
+    // Estados de frete e bairros
+    const [bairrosDisponiveis, setBairrosDisponiveis] = useState([]);
+    const [freteInfo, setFreteInfo]                   = useState({ calculado: false, taxa: 0, tempo: "", atendido: true, erroMsg: "" });
+    const [buscandoCep, setBuscandoCep]               = useState(false);
 
     useEffect(() => {
         try {
@@ -96,12 +107,146 @@ export default function Home() {
         });
     };
 
-    const totalCarrinho = carrinho.reduce((acc, item) => acc + (parseFloat(item.preco) * item.quantidade), 0);
+    const subtotalCarrinho = carrinho.reduce((acc, item) => acc + (parseFloat(item.preco) * item.quantidade), 0);
+    const taxaEntrega = (tipoEntrega === "delivery" && freteInfo.calculado && freteInfo.atendido) ? freteInfo.taxa : 0;
+    const totalCarrinho = subtotalCarrinho + taxaEntrega;
     const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+
+    // Coordenadas fixas do Boteco do Sivirino (Rua Larga da Feitosa, Encruzilhada, Recife)
+    const BOTECO_COORDS = { lat: -8.0455042, lng: -34.9264191 };
+
+    // Fórmula de Haversine com fator de correção de trânsito urbano de 1.25x
+    const calcularDistanciaKm = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // Raio da Terra em km
+        const dLat = (lat2 - lat1) * (Math.PI / 180);
+        const dLon = (lon2 - lon1) * (Math.PI / 180);
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distanciaLinhaReta = R * c;
+        return parseFloat((distanciaLinhaReta * 1.25).toFixed(1)); // 1.25x fator de rota real de rua
+    };
+
+    // Consulta de frete no backend enviando o bairro e opcionalmente os KM
+    const calcularFreteBairro = async (nomeBairro, cepOrigem = "", kmCalculado = null) => {
+        try {
+            const res = await api.post("/config/delivery/calcular", {
+                bairro: nomeBairro,
+                cep: cepOrigem,
+                distancia_km: kmCalculado
+            });
+
+            if (res.data.atendido) {
+                setFreteInfo({
+                    calculado: true,
+                    taxa: parseFloat(res.data.taxa) || 0,
+                    tempo: res.data.tempo_estimado || "40 a 60 min",
+                    distancia: res.data.distancia_km || kmCalculado,
+                    atendido: true,
+                    aviso: res.data.aviso || "",
+                    erroMsg: ""
+                });
+            } else {
+                setFreteInfo({
+                    calculado: true,
+                    taxa: 0,
+                    tempo: "",
+                    distancia: kmCalculado,
+                    atendido: false,
+                    erroMsg: res.data.mensagem || `O endereço está fora da nossa área de entrega no momento.`
+                });
+            }
+        } catch (err) {
+            console.error("Erro ao calcular frete:", err);
+            // Fallback: taxa padrão
+            const taxaPadrao = parseFloat(config?.delivery_taxa_padrao) || 8.00;
+            setFreteInfo({
+                calculado: true,
+                taxa: taxaPadrao,
+                tempo: config?.delivery_tempo || "40 a 60 min",
+                atendido: true,
+                aviso: `Taxa de R$ ${taxaPadrao.toFixed(2).replace(".", ",")} aplicada (o motoboy confirmará no WhatsApp).`,
+                erroMsg: ""
+            });
+        }
+    };
+
+    // Consulta automática ao ViaCEP + Nominatim para obter KM real (com fallback instantâneo)
+    const consultarCep = async (cepDigitado) => {
+        const cepLimpo = cepDigitado.replace(/\D/g, "");
+        setDadosCliente(d => ({ ...d, cep: cepDigitado }));
+        
+        if (cepLimpo.length !== 8) return;
+
+        setBuscandoCep(true);
+        setFreteInfo({ calculado: false, taxa: 0, tempo: "", atendido: true, erroMsg: "" });
+
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+            const data = await response.json();
+
+            if (data.erro) {
+                setFreteInfo({
+                    calculado: true,
+                    taxa: 0,
+                    tempo: "",
+                    atendido: false,
+                    erroMsg: "CEP não encontrado. Selecione seu bairro abaixo para calcular o frete."
+                });
+            } else {
+                const bairroEncontrado = data.bairro || "";
+                setDadosCliente(d => ({
+                    ...d,
+                    logradouro: data.logradouro || d.logradouro,
+                    bairro: bairroEncontrado || d.bairro,
+                    cidade: data.localidade || d.cidade,
+                    endereco: `${data.logradouro || ""}, ${d.numero || ""}${bairroEncontrado ? " - " + bairroEncontrado : ""}`.trim()
+                }));
+
+                // Tenta calcular distância em KM real via Nominatim
+                let kmReal = null;
+                try {
+                    const queryGeo = encodeURIComponent(`${data.logradouro || bairroEncontrado}, Recife, PE, Brasil`);
+                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${queryGeo}&limit=1`, {
+                        headers: { "Accept-Language": "pt-BR" }
+                    });
+                    const geoData = await geoRes.json();
+                    if (geoData && geoData.length > 0) {
+                        const clienteLat = parseFloat(geoData[0].lat);
+                        const clienteLon = parseFloat(geoData[0].lon);
+                        kmReal = calcularDistanciaKm(BOTECO_COORDS.lat, BOTECO_COORDS.lng, clienteLat, clienteLon);
+                    }
+                } catch (geoErr) {
+                    console.log("Geocoding opcional indisponível, usando tabela de bairros/taxa padrão");
+                }
+
+                await calcularFreteBairro(bairroEncontrado, cepLimpo, kmReal);
+            }
+        } catch (err) {
+            console.error("Erro no ViaCEP:", err);
+            setFreteInfo({
+                calculado: true,
+                taxa: parseFloat(config?.delivery_taxa_padrao) || 8.00,
+                tempo: "40 a 60 min",
+                atendido: true,
+                aviso: "Não foi possível validar o CEP. Aplicada taxa padrão de entrega.",
+                erroMsg: ""
+            });
+        } finally {
+            setBuscandoCep(false);
+        }
+    };
 
     const enviarPedidoWhatsApp = (e) => {
         e.preventDefault();
         if (carrinho.length === 0) return;
+
+        if (tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido) {
+            alert("Desculpe, o endereço informado está fora da nossa área de entrega.");
+            return;
+        }
 
         const telBoteco = "5581982714421"; // Telefone do Boteco do Sivirino
 
@@ -111,7 +256,8 @@ export default function Home() {
         if (tipoEntrega === "mesa") {
             msg += `📍 *Mesa no Salão:* ${dadosCliente.mesa || "Não informada"}\n`;
         } else {
-            msg += `🛵 *Entrega Delivery:*\n${dadosCliente.endereco || "Endereço a combinar"}\n`;
+            const endCompleto = `${dadosCliente.logradouro || dadosCliente.endereco || "Rua não informada"}, Nº ${dadosCliente.numero || "S/N"}${dadosCliente.complemento ? " (" + dadosCliente.complemento + ")" : ""}\n*Bairro:* ${dadosCliente.bairro || "Não informado"} — ${dadosCliente.cidade || "Recife"}${dadosCliente.cep ? ` (CEP: ${dadosCliente.cep})` : ""}`;
+            msg += `🛵 *Entrega Delivery:*\n${endCompleto}\n`;
         }
         msg += `💳 *Forma de Pagamento:* ${dadosCliente.pagamento}\n`;
         if (dadosCliente.observacao) {
@@ -126,7 +272,15 @@ export default function Home() {
         });
 
         msg += `----------------------------------------\n`;
-        msg += `💰 *VALOR TOTAL:* R$ ${totalCarrinho.toFixed(2).replace(".", ",")}\n`;
+        if (tipoEntrega === "delivery") {
+            msg += `Subtotal dos Pratos: R$ ${subtotalCarrinho.toFixed(2).replace(".", ",")}\n`;
+            msg += `🛵 Taxa de Entrega (${dadosCliente.bairro || "Bairro"}): R$ ${taxaEntrega.toFixed(2).replace(".", ",")}\n`;
+            if (freteInfo.tempo) msg += `⏱️ Previsão de Espera: ${freteInfo.tempo}\n`;
+            msg += `----------------------------------------\n`;
+            msg += `💰 *VALOR TOTAL COM FRETE:* R$ ${totalCarrinho.toFixed(2).replace(".", ",")}\n`;
+        } else {
+            msg += `💰 *VALOR TOTAL:* R$ ${totalCarrinho.toFixed(2).replace(".", ",")}\n`;
+        }
         msg += `----------------------------------------\n`;
         msg += `_Pedido gerado automaticamente pelo cardápio digital._`;
 
@@ -138,12 +292,14 @@ export default function Home() {
         Promise.all([
             api.get("/pratos"),
             api.get("/categorias"),
-            api.get("/config")
+            api.get("/config"),
+            api.get("/config/delivery/bairros").catch(() => ({ data: [] }))
         ])
-            .then(([rPratos, rCats, rConfig]) => {
+            .then(([rPratos, rCats, rConfig, rBairros]) => {
                 setPratos(rPratos.data);
                 setCategorias(rCats.data);
                 if (rConfig?.data) setConfig(rConfig.data);
+                if (rBairros?.data) setBairrosDisponiveis(rBairros.data);
             })
             .catch(() => setErro("Não foi possível carregar o cardápio."))
             .finally(() => setLoading(false));
@@ -509,11 +665,35 @@ export default function Home() {
                                             </div>
                                         ))}
 
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.8rem", borderTop: "2px dashed #eee" }}>
-                                            <span style={{ fontSize: "1.1rem", fontWeight: "700" }}>Total:</span>
-                                            <span style={{ fontSize: "1.3rem", fontWeight: "800", color: "#128c7e" }}>
-                                                R$ {totalCarrinho.toFixed(2).replace(".", ",")}
-                                            </span>
+                                        {/* Subtotal, Frete e Total */}
+                                        <div style={{ marginTop: "1rem", paddingTop: "0.8rem", borderTop: "2px dashed #eee" }}>
+                                            {tipoEntrega === "delivery" && (
+                                                <>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                                                        <span style={{ fontSize: "0.9rem", color: "#666" }}>Subtotal:</span>
+                                                        <span style={{ fontSize: "0.95rem", fontWeight: "600", color: "#333" }}>
+                                                            R$ {subtotalCarrinho.toFixed(2).replace(".", ",")}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                                                        <span style={{ fontSize: "0.9rem", color: "#666" }}>
+                                                            Taxa de Entrega {dadosCliente.bairro ? `(${dadosCliente.bairro})` : ""}:
+                                                        </span>
+                                                        <span style={{ fontSize: "0.95rem", fontWeight: "700", color: freteInfo.atendido && freteInfo.calculado ? "#166534" : "#e67e22" }}>
+                                                            {freteInfo.calculado
+                                                                ? (freteInfo.atendido ? `R$ ${taxaEntrega.toFixed(2).replace(".", ",")}` : "Não atendido")
+                                                                : "Informe o CEP"}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: tipoEntrega === "delivery" ? "1px solid #f0f0f0" : "none", paddingTop: tipoEntrega === "delivery" ? "0.5rem" : 0 }}>
+                                                <span style={{ fontSize: "1.1rem", fontWeight: "700" }}>Total:</span>
+                                                <span style={{ fontSize: "1.3rem", fontWeight: "800", color: "#128c7e" }}>
+                                                    R$ {totalCarrinho.toFixed(2).replace(".", ",")}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -542,7 +722,12 @@ export default function Home() {
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={() => setTipoEntrega("delivery")}
+                                                    onClick={() => {
+                                                        setTipoEntrega("delivery");
+                                                        if (dadosCliente.bairro && !freteInfo.calculado) {
+                                                            calcularFreteBairro(dadosCliente.bairro, dadosCliente.cep);
+                                                        }
+                                                    }}
                                                     style={{
                                                         padding: "0.6rem",
                                                         borderRadius: "10px",
@@ -559,51 +744,159 @@ export default function Home() {
                                             </div>
                                         </div>
 
-                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem", marginBottom: "0.8rem" }}>
-                                            <div>
+                                        {/* Nome e Mesa / Delivery */}
+                                        <div style={{ marginBottom: "0.8rem" }}>
+                                            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
+                                                Seu Nome *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                placeholder="Ex: Carlos Silva"
+                                                value={dadosCliente.nome}
+                                                onChange={(e) => setDadosCliente(d => ({ ...d, nome: e.target.value }))}
+                                                style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem" }}
+                                            />
+                                        </div>
+
+                                        {tipoEntrega === "mesa" ? (
+                                            <div style={{ marginBottom: "0.8rem" }}>
                                                 <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
-                                                    Seu Nome *
+                                                    Nº da Mesa *
                                                 </label>
                                                 <input
                                                     type="text"
                                                     required
-                                                    placeholder="Ex: Carlos"
-                                                    value={dadosCliente.nome}
-                                                    onChange={(e) => setDadosCliente(d => ({ ...d, nome: e.target.value }))}
+                                                    placeholder="Ex: Mesa 04"
+                                                    value={dadosCliente.mesa}
+                                                    onChange={(e) => setDadosCliente(d => ({ ...d, mesa: e.target.value }))}
                                                     style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem" }}
                                                 />
                                             </div>
+                                        ) : (
+                                            /* Campos de Endereço Inteligente para Delivery */
+                                            <div style={{ background: "#fbf9f5", padding: "1rem", borderRadius: "12px", border: "1px solid #e8e0d5", marginBottom: "1rem" }}>
+                                                
+                                                {/* CEP com busca automática */}
+                                                <div style={{ marginBottom: "0.7rem" }}>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                                                        <label style={{ fontSize: "0.8rem", fontWeight: "700", color: "#444" }}>
+                                                            CEP de Entrega
+                                                        </label>
+                                                        {buscandoCep && (
+                                                            <span style={{ fontSize: "0.75rem", color: "#e8b84b", fontWeight: "600" }}>
+                                                                ⏳ Buscando endereço...
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        maxLength="9"
+                                                        placeholder="Ex: 52041-310 (digite o CEP)"
+                                                        value={dadosCliente.cep}
+                                                        onChange={(e) => consultarCep(e.target.value)}
+                                                        style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1.5px solid #e8b84b", fontSize: "0.9rem", background: "#fff", fontWeight: "600" }}
+                                                    />
+                                                </div>
 
-                                            {tipoEntrega === "mesa" ? (
+                                                {/* Seletor de Bairro (Fallback e Confirmação) */}
+                                                <div style={{ marginBottom: "0.7rem" }}>
+                                                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "600", color: "#555", marginBottom: "0.25rem" }}>
+                                                        Bairro em Recife *
+                                                    </label>
+                                                    <select
+                                                        required
+                                                        value={dadosCliente.bairro}
+                                                        onChange={(e) => {
+                                                            const novoBairro = e.target.value;
+                                                            setDadosCliente(d => ({ ...d, bairro: novoBairro }));
+                                                            calcularFreteBairro(novoBairro, dadosCliente.cep);
+                                                        }}
+                                                        style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem", background: "#fff" }}
+                                                    >
+                                                        <option value="">Selecione seu bairro...</option>
+                                                        {bairrosDisponiveis.map(b => (
+                                                            <option key={b.id} value={b.nome}>
+                                                                {b.nome} — R$ {parseFloat(b.taxa).toFixed(2).replace(".", ",")}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Rua e Número */}
+                                                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "0.6rem", marginBottom: "0.7rem" }}>
+                                                    <div>
+                                                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "600", color: "#555", marginBottom: "0.25rem" }}>
+                                                            Rua / Avenida *
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            required
+                                                            placeholder="Nome da sua rua"
+                                                            value={dadosCliente.logradouro}
+                                                            onChange={(e) => setDadosCliente(d => ({ ...d, logradouro: e.target.value }))}
+                                                            style={{ width: "100%", padding: "0.55rem 0.7rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.85rem", background: "#fff" }}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "600", color: "#555", marginBottom: "0.25rem" }}>
+                                                            Número *
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            required
+                                                            placeholder="Ex: 138"
+                                                            value={dadosCliente.numero}
+                                                            onChange={(e) => setDadosCliente(d => ({ ...d, numero: e.target.value }))}
+                                                            style={{ width: "100%", padding: "0.55rem 0.7rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.85rem", background: "#fff" }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Complemento */}
                                                 <div>
-                                                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
-                                                        Nº da Mesa *
+                                                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: "600", color: "#555", marginBottom: "0.25rem" }}>
+                                                        Complemento / Ponto de Referência
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        required
-                                                        placeholder="Ex: Mesa 04"
-                                                        value={dadosCliente.mesa}
-                                                        onChange={(e) => setDadosCliente(d => ({ ...d, mesa: e.target.value }))}
-                                                        style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem" }}
+                                                        placeholder="Ex: Apto 201, Bloco B / Próximo à padaria"
+                                                        value={dadosCliente.complemento}
+                                                        onChange={(e) => setDadosCliente(d => ({ ...d, complemento: e.target.value }))}
+                                                        style={{ width: "100%", padding: "0.55rem 0.7rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.85rem", background: "#fff" }}
                                                     />
                                                 </div>
-                                            ) : (
-                                                <div>
-                                                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
-                                                        Endereço de Entrega *
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        placeholder="Rua, número e bairro"
-                                                        value={dadosCliente.endereco}
-                                                        onChange={(e) => setDadosCliente(d => ({ ...d, endereco: e.target.value }))}
-                                                        style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem" }}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
+
+                                                {/* Aviso de Status de Entrega */}
+                                                {freteInfo.calculado && (
+                                                    <div style={{
+                                                        marginTop: "0.8rem",
+                                                        padding: "0.7rem 0.9rem",
+                                                        borderRadius: "8px",
+                                                        fontSize: "0.82rem",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: "0.5rem",
+                                                        background: freteInfo.atendido ? "#f0fdf4" : "#fef2f2",
+                                                        border: `1px solid ${freteInfo.atendido ? "#bbf7d0" : "#fecaca"}`,
+                                                        color: freteInfo.atendido ? "#166534" : "#991b1b"
+                                                    }}>
+                                                        <span>{freteInfo.atendido ? "🛵" : "⚠️"}</span>
+                                                        <div>
+                                                            {freteInfo.atendido ? (
+                                                                <>
+                                                                    <strong>Entrega Disponível!</strong> Taxa: <strong>R$ {freteInfo.taxa.toFixed(2).replace(".", ",")}</strong> • Previsão: {freteInfo.tempo}
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <strong>Fora da área de entrega:</strong> {freteInfo.erroMsg}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                         <div style={{ marginBottom: "0.8rem" }}>
                                             <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#555", marginBottom: "0.3rem" }}>
@@ -614,8 +907,8 @@ export default function Home() {
                                                 onChange={(e) => setDadosCliente(d => ({ ...d, pagamento: e.target.value }))}
                                                 style={{ width: "100%", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #ccc", fontSize: "0.88rem", background: "#fff" }}
                                             >
-                                                <option value="Cartão de Crédito / Débito">Cartão de Crédito / Débito</option>
-                                                <option value="PIX">PIX</option>
+                                                <option value="Cartão de Crédito / Débito (na entrega/mesa)">Cartão de Crédito / Débito</option>
+                                                <option value="PIX (chave direta)">PIX</option>
                                                 <option value="Dinheiro">Dinheiro</option>
                                             </select>
                                         </div>
@@ -635,16 +928,17 @@ export default function Home() {
 
                                         <button
                                             type="submit"
+                                            disabled={tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido}
                                             style={{
                                                 width: "100%",
-                                                background: "#25d366",
+                                                background: (tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido) ? "#ccc" : "#25d366",
                                                 color: "#ffffff",
                                                 border: "none",
                                                 padding: "0.95rem",
                                                 borderRadius: "50px",
                                                 fontWeight: "800",
                                                 fontSize: "1.05rem",
-                                                cursor: "pointer",
+                                                cursor: (tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido) ? "not-allowed" : "pointer",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
@@ -655,6 +949,7 @@ export default function Home() {
                                             <span>Enviar Pedido para WhatsApp</span>
                                             <span>💬</span>
                                         </button>
+
                                     </form>
                                 </div>
                             </div>

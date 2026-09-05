@@ -1,0 +1,393 @@
+﻿PDFs encontrados: ['Carta+de+Apresentac╠ºa╠âo+-+PEX.pdf', 'Relatorio de Projeto de Extensao I - Caue do Lago Rodrigues.pdf', 'Roteiro_Analise_e_Desenvolvimento_de_Sistemas_IV_-_PEX.docx.pdf', 'Termo+de+Autorizac╠ºa╠âo+-+PEX+.pdf']
+
+========== Carta+de+Apresentac╠ºa╠âo+-+PEX.pdf ==========
+
+Total de paginas: 1
+--- Pagina 1 ---
+CARTA DE APRESENTA├ç├âO DE PROJETOS DE EXTENS├âO
+______________________, _____ de _________________ de 20___.
+Aos cuidados da ______________________________
+ASSUNTO: PROJETO DE EXTENS├âO UNIVERSIT├üRIA
+Em acordo com a Resolu├º├úo CNE/CES n┬║7/2018 e o Parecer CNE/CES n┬║ 608/2018 que instituem as
+Diretrizes para a Extens├úo na Educa├º├úo Superior Brasileira. A Coordena├º├úo de Curso, por meio do Projeto
+Pedag├│gico do Curso, prev├¬ atividades de extens├úo com o objetivo de promover a participa├º├úo do
+discente em programas de melhoria das condi├º├Áes de vida da comunidade e no processo geral de
+desenvolvimento.
+Informamos que o(a) discente _________________________________________, RA
+________________, matriculado no Curso _______________________________________ est├í
+habilitado(a) a desenvolver atividades na comunidade.
+Respeitosamente, solicitamos sua autoriza├º├úo para que o discente possa desenvolver seu projeto de
+extens├úo nessa Organiza├º├úo.
+Esclarecemos ainda, que o projeto de extens├úo n├úo gera v├¡nculos empregat├¡cios de qualquer natureza
+com a parte concedente.
+Sem mais, colocamo-nos ├á disposi├º├úo para os esclarecimentos que se fizerem necess├írios.
+Cordialmente,
+Adriane Cristina Guerino
+Coordenadora de Extens├úo
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica
+
+========== Relatorio de Projeto de Extensao I - Caue do Lago Rodrigues.pdf ==========
+
+Total de paginas: 15
+--- Pagina 1 ---
+CENTRO UNIVERSIT├üRIO UNI├âO DAS AM├ëRICAS DESCOMPLICA
+AN├üLISE E DESENVOLVIMENTO DE SISTEMAS
+CAUE DO LAGO RODRIGUES
+RELAT├ôRIO DE PROJETO DE EXTENS├âO I
+RIO DE JANEIRO-RJ
+2025
+--- Pagina 2 ---
+Caue do Lago Rodrigues, RA: 2434564
+RELAT├ôRIO DE PROJETO DE EXTENS├âO I
+Relat├│rio referente ao Projeto de Extens├úo I apresentado ao
+Curso de Tecnologia de An├ílise e Desenvolvimento de Sistemas,
+do Centro Universit├írio Uni├úo Das Am├®ricas Descomplica,
+como exig├¬ncia para a aprova├º├úo na disciplina de Projeto
+Extens├úo I.
+Rio de Janeiro - RJ
+2025
+--- Pagina 3 ---
+1. SOBRE O LOCAL DA ATIVIDADE
+1.1 Institui├º├úo Beneficiada
+Yandra do Lago Rodrigues ME. Nome fantasia: Restaurante Arena Gourmet.
+1.2 Atividade da Institui├º├úo
+A empresa ├® um restaurante que oferece servi├ºos de comida por quilo e ├á la carte, al├®m
+de realizar entregas e eventos.
+1.3 Localiza├º├úo
+Rua Coelho Neto S/N, Ara├ºatuba SP, em anexo ao gin├ísio de esportes Dr. Pl├ícido
+Rocha.
+--- Pagina 4 ---
+2. DESCRI├ç├âO DA ATIVIDADE
+2.1 Caracter├¡sticas da Atividade
+A atividade teve dura├º├úo total de 3 semanas, com um total de 45 horas dedicadas.
+Com base na an├ílise realizada, foi identificado que a cria├º├úo de um website ├® uma a├º├úo
+estrat├®gica e necess├íria para ampliar a presen├ºa digital da empresa, otimizar processos
+comerciais e fortalecer o relacionamento com o p├║blico alvo.
+Objetivo
+Desenvolver uma plataforma digital centralizada que sirva como ponto de acesso
+institucional e comercial para clientes, parceiros e demais interessados, promovendo maior
+visibilidade, integra├º├úo de servi├ºos e suporte ├ás estrat├®gias de marketing digital.
+Vantagens T├®cnicas e Benef├¡cios Estrat├®gicos
+1. Presen├ºa Digital Permanente (24/7)
+--- Pagina 5 ---
+O website funcionar├í como uma vitrine digital ativa em tempo integral,
+proporcionando acesso cont├¡nuo ├ás informa├º├Áes da empresa, cat├ílogo de produtos/servi├ºos, e
+canais de contato.
+2. Aumento da Visibilidade e Alcance do P├║blico Alvo
+Atrav├®s da indexa├º├úo em mecanismos de busca (Google, Bing etc.) e pr├íticas de SEO
+(Search Engine Optimization), o site potencializa a capta├º├úo org├ónica de visitantes qualificados,
+facilitando a descoberta da marca por novos clientes.
+3. Integra├º├úo de Sistemas e Canais de Venda
+O site poder├í ser integrado a sistemas j├í utilizados (ex: ERP, CRM, gateways de
+pagamento, log├¡stica) e canais de venda (e commerce, redes sociais, marketplaces),
+proporcionando uma gest├úo centralizada, automatizada e escal├ível.
+4. Padroniza├º├úo e Centraliza├º├úo das Informa├º├Áes
+Todo o conte├║do institucional, promocional e operacional ficar├í dispon├¡vel em um
+ambiente controlado e padronizado, garantindo consist├¬ncia na comunica├º├úo e maior
+autonomia na gest├úo de conte├║do.
+5. Gera├º├úo e Qualifica├º├úo de Leads
+A inclus├úo de formul├írios, landing pages e recursos de capta├º├úo de dados permitir├í a
+gera├º├úo de leads para estrat├®gias de remarketing, automa├º├úo e CRM, aumentando o potencial
+de convers├úo em vendas.
+6. Suporte ├ás Estrat├®gias de Marketing Digital
+A plataforma servir├í como base para campanhas de tr├ífego pago, an├║ncios, e mail
+marketing, blog institucional, e demais a├º├Áes voltadas para fortalecimento de marca e aumento
+de receita.
+--- Pagina 6 ---
+2.2 Cronograma
+Semana 1 (15 horas): Planejamento da tour virtual e contatos iniciais.
+Dia 1: Elabora├º├úo do planejamento de tour virtual, pesquisa pr├®via da institui├º├úo e
+identifica├º├úo de poss├¡veis ├íreas de interesse por parte do propriet├írio.
+Dia 2: Contato inicial com representantes para apresenta├º├úo da proposta da PEX,
+discuss├Áes gerais e agendamento das reuni├Áes.
+Dia 3: Confirma├º├úo de datas e hor├írios, coleta de informa├º├Áes preliminares a respeito
+da institui├º├úo e seus desafios, limita├º├Áes e aspira├º├Áes.
+Dia 4: An├ílise de documenta├º├úo e demais materiais fornecida pela institui├º├úo.
+Dia 5: Revis├úo do planejamento e prepara├º├úo de perguntas / roteiro da reuni├úo.
+Semana 2 (15 horas): Tour virtual e reuni├Áes.
+Dia 6: Reuni├úo via Zoom, a qual foram abordados alguns pontos:
+1. Objetivos do Website
+Qual ├® o foco principal? (institucional, comercial, informativo, gera├º├úo de leads,
+portf├│lio etc.)
+Quais metas mensur├íveis devem ser atingidas? (aumento de tr├ífego, vendas online,
+capta├º├úo de contatos, etc.)
+2. P├║blico Alvo
+Quem s├úo os usu├írios esperados? (perfil demogr├ífico, comportamento online,
+dispositivos mais utilizados)
+Como o site pode atender melhor ├ás expectativas e necessidades desse p├║blico?
+3. Arquitetura da Informa├º├úo
+--- Pagina 7 ---
+Estrutura do menu e p├íginas principais (ex: Home, Sobre, Produtos, Servi├ºos, Blog,
+Contato)
+Mapeamento de fluxos de navega├º├úo esperados
+Cria├º├úo de sitemap (organiza├º├úo hier├írquica das p├íginas)
+4. Conte├║do
+Quem ser├í respons├ível pela cria├º├úo/reda├º├úo do conte├║do?
+Haver├í necessidade de cria├º├úo de textos, imagens, v├¡deos ou ilustra├º├Áes?
+Defini├º├úo de tom de voz e linha editorial
+5. Design e Identidade Visual
+Reaproveitamento ou cria├º├úo de uma identidade visual
+Refer├¬ncias visuais e benchmarking
+Responsividade (adapta├º├úo a celulares, tablets e desktops)
+Acessibilidade (padr├Áes WCAG)
+6. Funcionalidades e Recursos
+Formul├írios (contato, or├ºamento, cadastro)
+Integra├º├úo com redes sociais
+Blog ou ├írea de not├¡cias
+E commerce: Carrinho, checkout, meios de pagamento
+Login de usu├írios / ├írea restrita
+Chatbot ou suporte online
+7. Tecnologia e Plataforma
+CMS (WordPress, Joomla, customizado, etc.) ou desenvolvimento sob medida?
+Linguagens, frameworks e ferramentas envolvidas
+Hospedagem: onde ser├í hospedado e com quais recursos?
+Seguran├ºa (certificado SSL, backups, prote├º├úo contra ataques)
+--- Pagina 8 ---
+8. SEO e Marketing Digital
+Otimiza├º├úo para mecanismos de busca (palavras chave, metadados, estrutura de URL)
+Planejamento para tr├ífego org├ónico e pago
+Estrat├®gias de lan├ºamento (pr├® lan├ºamento, campanhas de divulga├º├úo)
+9. Gest├úo e Manuten├º├úo
+Quem ser├í respons├ível pela manuten├º├úo t├®cnica e atualiza├º├úo de conte├║do?
+Frequ├¬ncia de atualiza├º├Áes
+Pol├¡tica de suporte t├®cnico
+10. Cronograma e Etapas do Projeto
+Fases: briefing, wireframe, design, desenvolvimento, testes, lan├ºamento
+Defini├º├úo de prazos e entregas parciais
+Valida├º├Áes e revis├Áes em cada etapa
+11. Custos e Or├ºamento
+Investimento inicial e recorrente
+Custos com dom├¡nio, hospedagem, licen├ºas, plugins, banco de imagens, etc.
+Esses t├│picos criam a base para um planejamento s├│lido, previnem imprevistos durante
+o desenvolvimento e garantem que o site seja funcional, atraente e estrat├®gico.
+Dia 7: Organiza├º├úo e planejamento para pr├│xima reuni├úo.
+Dia 8: Reuni├úo de acompanhamento para ajustes.
+Semana 3 (15 horas): An├ílise e elabora├º├úo do relat├│rio.
+Dia 9: Estudo detalhado de documentos e sele├º├úo de informa├º├Áes.
+Dia 10: Avalia├º├úo de necessidades e brainstorming de solu├º├Áes.
+--- Pagina 9 ---
+Dia 11: Reda├º├úo do relat├│rio final.
+Dia 12: Revis├úo e ajustes finais.
+Dia 13: Apresenta├º├úo dos resultados via Zoom.
+--- Pagina 10 ---
+3. CONCLUS├âO DA ATIVIDADE
+3.1 Desafios, Conquistas e Aprendizados
+O principal desafio foi identificar as reais necessidades do estabelecimento e propor
+solu├º├Áes coerentes e tang├¡veis. As conquistas inclu├¡ram a apresenta├º├úo de solu├º├Áes que visam
+resolver os problemas identificados, promovendo crescimento e melhor posicionamento
+perante o com├®rcio local.
+--- Pagina 11 ---
+4. EVID├èNCIAS
+4.1 Evid├¬ncias
+--- Pagina 12: SEM TEXTO ---
+--- Pagina 13: SEM TEXTO ---
+--- Pagina 14: SEM TEXTO ---
+--- Pagina 15: SEM TEXTO ---
+
+========== Roteiro_Analise_e_Desenvolvimento_de_Sistemas_IV_-_PEX.docx.pdf ==========
+
+Total de paginas: 7
+--- Pagina 1 ---
+CURSO DE TECNOLOGIA EM AN├üLISE E DESENVOLVIMENTO DE SISTEMAS
+PROJETO DE EXTENS├âO IV ÔÇô COLETA DE INFORMA├ç├öES
+DESCRI├ç├âO: As atividades de Extens├úo no curso de An├ílise e Desenvolvimento de Sistemas
+t├¬m como prop├│sito principal conectar os estudantes ├ás demandas pr├íticas de institui├º├Áes,
+ONGs, pequenas empresas, startups e comunidades. O objetivo desta etapa ├® entender os
+problemas e identificar oportunidades para o desenvolvimento de solu├º├Áes computacionais
+eficientes, aplic├íveis ao contexto espec├¡fico de cada projeto.
+Nesta fase, o foco est├í na coleta de informa├º├Áes detalhadas e relevantes, indispens├íveis para
+caracterizar as necessidades e propor interven├º├Áes tecnol├│gicas baseadas em software. A ├¬nfase
+recai sobre o desenvolvimento de habilidades para planejar e realizar levantamentos de dados,
+estruturando as informa├º├Áes coletadas em um formato claro e pr├ítico.
+As atividades incluem a realiza├º├úo de entrevistas, aplica├º├úo de question├írios, an├ílise de sistemas
+existentes e o uso de ferramentas para organizar e consolidar os dados. Al├®m disso, os
+estudantes podem realizar palestras, workshops ou cursos voltados ├á comunidade atendida,
+abordando temas como desenvolvimento de software, inclus├úo digital, seguran├ºa da informa├º├úo e
+tecnologia sustent├ível.
+A extens├úo universit├íria no curso de ADS desempenha um papel fundamental ao levar o
+conhecimento t├®cnico para o campo pr├ítico, com a├º├Áes como:
+ÔùÅ Desenvolvimento de sistemas personalizados para pequenas empresas e ONGs,
+otimizando processos e opera├º├Áes.
+ÔùÅ Cria├º├úo de plataformas de inclus├úo digital e acessibilidade para comunidades carentes.
+ÔùÅ Implementa├º├úo de sistemas de gest├úo, com├®rcio eletr├┤nico ou automa├º├úo de processos
+administrativos.
+ÔùÅ Consultoria tecnol├│gica para ajudar organiza├º├Áes a melhorar suas infraestruturas
+tecnol├│gicas.
+ÔùÅ Projetos de sustentabilidade tecnol├│gica, promovendo efici├¬ncia no uso de recursos.
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica
+--- Pagina 2 ---
+O QU├è REALIZAR:
+1. Planejamento de Coleta de Dados:
+o Elaborar um plano individual para identificar os m├®todos e ferramentas mais
+adequados ├á coleta de informa├º├Áes sobre o contexto do projeto.
+o Mapear as necessidades do cliente ou comunidade, definindo os requisitos do
+sistema ou solu├º├úo tecnol├│gica.
+2. Coleta de Informa├º├Áes:
+o Realizar entrevistas com usu├írios, levantamento de requisitos e an├ílise de sistemas
+existentes.
+o Aplicar ferramentas como Google Forms, Trello, ou softwares de prototipa├º├úo para
+organizar as informa├º├Áes obtidas.
+o Documentar o processo de coleta por meio de fotos, relat├│rios e registros
+organizados.
+3. Organiza├º├úo e An├ílise dos Dados:
+o Estruturar os dados coletados em tabelas, gr├íficos ou documentos, utilizando
+ferramentas como Excel, Power BI ou software de an├ílise de dados.
+o Realizar a modelagem inicial do sistema, incluindo fluxogramas, diagramas UML e
+esquemas de banco de dados.
+o Identificar padr├Áes e gargalos para fundamentar as propostas de solu├º├úo
+tecnol├│gica.
+4. Produ├º├úo de um Relat├│rio ou Dossi├¬:
+o Consolidar os resultados obtidos em um relat├│rio t├®cnico, com linguagem acess├¡vel
+e foco na clareza.
+o Apresentar as conclus├Áes com base em evid├¬ncias, apontando as solu├º├Áes vi├íveis
+para os problemas identificados.
+5. Palestra ou Treinamento para a Comunidade Envolvida (opcional):
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica
+--- Pagina 3 ---
+o Para quem estiver em fase avan├ºada, desenvolver propostas de palestras ou
+workshops sobre temas relevantes, como seguran├ºa cibern├®tica, uso de
+ferramentas digitais ou desenvolvimento de software b├ísico.
+o Apresentar evid├¬ncias das atividades realizadas, incluindo materiais de apoio e
+registros.
+O QU├è REALIZAR:
+Para iniciar seu projeto, voc├¬ dever├í preencher a CARTA DE APRESENTA├ç├âO e escolher
+uma organiza├º├úo (empresas, com├®rcios, templos, escolas etc.) para visitar e se apresentar.
+Ap├│s a autoriza├º├úo da organiza├º├úo, com o preenchimento do TERMO DE AUTORIZA├ç├âO
+PARA REALIZA├ç├âO DAS ATIVIDADES EXTENSIONISTAS, inicie o seu projeto.
+Muito bem! Agora o que fazer?
+1. Planejamento de Coleta de Dados:
+o Elaborar um plano individual para identificar os m├®todos e ferramentas mais
+adequados ├á coleta de informa├º├Áes sobre o contexto do projeto.
+o Mapear as necessidades do cliente ou comunidade, definindo os requisitos do
+sistema ou solu├º├úo tecnol├│gica.
+2. Coleta de Informa├º├Áes:
+o Realizar entrevistas com usu├írios, levantamento de requisitos e an├ílise de sistemas
+existentes.
+o Aplicar ferramentas como Google Forms, Trello, ou softwares de prototipa├º├úo para
+organizar as informa├º├Áes obtidas.
+o Documentar o processo de coleta por meio de fotos, relat├│rios e registros
+organizados.
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica
+--- Pagina 4 ---
+3. Organiza├º├úo e An├ílise dos Dados:
+o Estruturar os dados coletados em tabelas, gr├íficos ou documentos, utilizando
+ferramentas como Excel, Power BI ou software de an├ílise de dados.
+o Realizar a modelagem inicial do sistema, incluindo fluxogramas, diagramas UML e
+esquemas de banco de dados.
+o Identificar padr├Áes e gargalos para fundamentar as propostas de solu├º├úo
+tecnol├│gica.
+4. Produ├º├úo de um Relat├│rio ou Dossi├¬:
+o Consolidar os resultados obtidos em um relat├│rio t├®cnico, com linguagem acess├¡vel
+e foco na clareza.
+o Apresentar as conclus├Áes com base em evid├¬ncias, apontando as solu├º├Áes vi├íveis
+para os problemas identificados.
+5. Palestra ou Treinamento para a Comunidade Envolvida (opcional):
+o Para quem estiver em fase avan├ºada, desenvolver propostas de palestras ou
+workshops sobre temas relevantes, como seguran├ºa cibern├®tica, uso de
+ferramentas digitais ou desenvolvimento de software b├ísico.
+o Apresentar evid├¬ncias das atividades realizadas, incluindo materiais de apoio e
+registros.
+Coletou essas informa├º├Áes? Agora voc├¬ poder├í preencher o relat├│rio de seu Projeto de
+Extens├úo. Muito bem!
+COMPET├èNCIAS:
+As compet├¬ncias desenvolvidas incluem:
+ÔùÅ Coleta e An├ílise de Requisitos: Capacidade de identificar necessidades de sistemas e
+traduzir esses requisitos em solu├º├Áes vi├íveis.
+ÔùÅ Documenta├º├úo T├®cnica: Habilidade de organizar informa├º├Áes em documentos claros e
+acess├¡veis.
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica
+--- Pagina 5 ---
+ÔùÅ Modelagem de Sistemas: Conhecimento em
+diagramas UML, fluxogramas e prototipa├º├úo de
+sistemas.
+ÔùÅ Planejamento e Flexibilidade: Compet├¬ncia para planejar atividades e ajustar estrat├®gias
+conforme as demandas do projeto.
+ÔùÅ Comunica├º├úo com Stakeholders: Habilidade de interagir com clientes e comunidades
+para levantar informa├º├Áes cr├¡ticas.
+Os temas envolvidos nas compet├¬ncias do Projeto de Extens├úo em ADS incluem:
+1. Desenvolvimento de Software: Aplica├º├úo de linguagens de programa├º├úo como Java,
+Python, ou C#.
+2. Sistemas Web e Mobile: Desenvolvimento de aplica├º├Áes web e m├│veis utilizando
+frameworks modernos.
+3. Bancos de Dados: Estrutura├º├úo e gerenciamento de dados com MySQL, PostgreSQL ou
+MongoDB.
+4. Seguran├ºa da Informa├º├úo: Implementa├º├úo de boas pr├íticas para prote├º├úo de dados e
+seguran├ºa de sistemas.
+5. UX/UI: Design de interfaces amig├íveis e intuitivas para usu├írios finais.
+6. Consultoria e Suporte T├®cnico: Fornecimento de suporte e orienta├º├Áes para a ado├º├úo de
+tecnologias em pequenas organiza├º├Áes.
+7. Sustentabilidade Tecnol├│gica: Proposi├º├úo de solu├º├Áes que otimizem o uso de recursos e
+reduzam impactos ambientais.
+SOFT SKILLS DESENVOLVIDAS:
+1. Autonomia e Organiza├º├úo: Desenvolvimento da capacidade de conduzir atividades de
+forma independente e estruturada.
+2. Pensamento Cr├¡tico: Avalia├º├úo dos dados coletados para extrair insights e propor
+solu├º├Áes eficazes.
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica
+--- Pagina 6 ---
+3. Empatia e Colabora├º├úo: Sensibilidade
+para compreender os desafios enfrentados por
+diferentes p├║blicos e trabalhar em equipe para resolv├¬-los.
+4. Adaptabilidade: Capacidade de ajustar abordagens e ferramentas conforme os desafios
+encontrados.
+5. ├ëtica e Responsabilidade Social: Compromisso com pr├íticas ├®ticas e solu├º├Áes que
+promovam impactos positivos.
+OBJETIVOS DE APRENDIZAGEM:
+O Projeto de Extens├úo IV busca proporcionar aos estudantes a oportunidade de: Desenvolver
+compet├¬ncias na coleta, organiza├º├úo e an├ílise de dados, com foco na aplica├º├úo pr├ítica. Projetar
+solu├º├Áes tecnol├│gicas eficazes e alinhadas ├ás necessidades reais de clientes e comunidades.
+Promover o aprendizado sobre como documentar e comunicar informa├º├Áes t├®cnicas de forma
+clara e profissional.
+BIBLIOGRAFIA:
+ASSUN├ç├âO, R. M., & OLIVEIRA, J. P. (2016). Inclus├úo digital e alfabetiza├º├úo tecnol├│gica: um
+estudo de caso. Salvador: EDUFBA.
+BATISTA, E. S. (2012). Tecnologias assistivas e inclus├úo digital. S├úo Paulo: Cultura Acad├¬mica.
+KEEGAN, V. (2015). Desenvolvimento de jogos digitais. S├úo Paulo: Novatec.
+MENDES, C. L. (2018). Seguran├ºa da informa├º├úo: uma vis├úo gerencial. S├úo Paulo: Saraiva.
+MONTEIRO, M. (2014). Design para a Internet: projetando a experi├¬ncia perfeita. Rio de Janeiro:
+Alta Books.
+NORTON, P. (2002). Introdu├º├úo ├á inform├ítica. S├úo Paulo: Makron Books.
+NUNES, C. S. (2017). Rob├│tica educacional: princ├¡pios e pr├íticas. Porto Alegre: Bookman.
+PEREIRA, J. R. M., & MENDES, L. F. (2015). Hackathons: inovando com maratonas de
+programa├º├úo. S├úo Paulo: Editora Blucher.
+PRESSMAN, R. S. (2019). Engenharia de software: uma abordagem profissional. 8. ed. Porto
+Alegre: AMGH.
+RIBEIRO, M. A., & ALVES, T. M. (2019). Sustentabilidade e tecnologia: estrat├®gias e pr├íticas. Rio
+de Janeiro: Elsevier.
+SOMMERVILLE, I. (2011). Engenharia de Software. 9. ed. S├úo Paulo: Pearson.
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica
+--- Pagina 7 ---
+TANENBAUM, A. S., & WETHERALL, D. J. (2011).
+Redes de computadores. 5. ed. S├úo Paulo: Pearson.
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica
+
+========== Termo+de+Autorizac╠ºa╠âo+-+PEX+.pdf ==========
+
+Total de paginas: 1
+--- Pagina 1 ---
+TERMO DE AUTORIZA├ç├âO PARA REALIZA├ç├âO DAS ATIVIDADES EXTENSIONISTAS
+Organiza├º├úo:__________________________________________________________________________
+CNPJ:________________________________________________________________________________
+Endere├ºo Completo da Organiza├º├úo:
+_____________________________________________________________________________________
+_____________________________________________________________________________________
+Nome do Representante da Organiza├º├úo:
+_____________________________________________________________________________________
+Considerando que a Institui├º├úo de Ensino Superior desenvolve projetos de extens├úo com o objetivo de
+aplicar o conhecimento acad├¬mico em contextos pr├íticos e promover o desenvolvimento profissional dos
+estudantes, a Organiza├º├úo reconhece a import├óncia da colabora├º├úo com as institui├º├Áes educacionais e
+est├í disposta a apoiar iniciativas que contribuam para o desenvolvimento educacional e profissional de
+estudantes universit├írios.
+Este Termo tem por objeto a autoriza├º├úo concedida pela Organiza├º├úo para a realiza├º├úo
+do projeto de extens├úo universit├íria denominado ______________________________________________
+_____________________________________________________________________________________
+em nossas depend├¬ncias.
+A Organiza├º├úo se compromete a fornecer o acesso ├ás suas instala├º├Áes, equipamentos e recursos
+necess├írios para a realiza├º├úo do projeto de extens├úo, e designar├í um funcion├írio como ponto de contato
+para facilitar a comunica├º├úo e o apoio ao projeto. Este Termo vigorar├í a partir da data de sua assinatura
+at├® a conclus├úo do projeto de extens├úo, conforme cronograma acordado.
+______________________________________________
+[Representante da Organiza├º├úo]
+[Nome e Cargo]:
+[Carimbo da Organiza├º├úo]
+Centro Universit├írio Uni├úo das Am├®ricas Descomplica

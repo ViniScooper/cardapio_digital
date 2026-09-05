@@ -82,6 +82,23 @@ export default function Admin() {
     });
     const [salvandoHH, setSalvandoHH] = useState(false);
 
+    // Configuração de Delivery e Bairros
+    const [configDelivery, setConfigDelivery] = useState({
+        delivery_ativo: true,
+        delivery_tempo: "40 a 60 min",
+        delivery_taxa_padrao: "8.00",
+        delivery_pedido_minimo: "0.00",
+        delivery_modo: "km",
+        delivery_taxa_base: "6.00",
+        delivery_taxa_km: "2.00",
+        delivery_raio_maximo: "12.00"
+    });
+    const [salvandoDelivery, setSalvandoDelivery] = useState(false);
+    const [bairrosDelivery, setBairrosDelivery]   = useState([]);
+    const [formBairro, setFormBairro]             = useState({ id: null, nome: "", taxa: "8.00", tempo_estimado: "40 a 55 min", ativo: true });
+    const [salvandoBairro, setSalvandoBairro]     = useState(false);
+    const [buscaBairroAdmin, setBuscaBairroAdmin] = useState("");
+
     const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
 
     const carregarTudo = useCallback(() => {
@@ -91,19 +108,31 @@ export default function Admin() {
             api.get("/categorias"),
             api.get("/config"),
             api.get("/selos").catch(() => ({ data: [] })),
-            api.get("/pratos/matriz").catch(() => ({ data: null }))
+            api.get("/pratos/matriz").catch(() => ({ data: null })),
+            api.get("/config/delivery/bairros/admin").catch(() => ({ data: [] }))
         ])
-            .then(([rPratos, rCats, rConfig, rSelos, rMatriz]) => {
+            .then(([rPratos, rCats, rConfig, rSelos, rMatriz, rBairros]) => {
                 setPratos(rPratos.data);
                 setCategorias(rCats.data);
                 if (rSelos?.data) setSelos(rSelos.data);
                 if (rMatriz?.data) setMatrizEng(rMatriz.data);
+                if (rBairros?.data) setBairrosDelivery(rBairros.data);
                 if (rConfig?.data) {
                     setConfigHH({
                         hh_ativo:  !!rConfig.data.hh_ativo,
                         hh_dias:   rConfig.data.hh_dias   || "Segunda, Terça e Quarta",
                         hh_inicio: rConfig.data.hh_inicio || "19:00",
                         hh_fim:    rConfig.data.hh_fim    || "22:00"
+                    });
+                    setConfigDelivery({
+                        delivery_ativo: rConfig.data.delivery_ativo === undefined ? true : !!rConfig.data.delivery_ativo,
+                        delivery_tempo: rConfig.data.delivery_tempo || "40 a 60 min",
+                        delivery_taxa_padrao: rConfig.data.delivery_taxa_padrao ? String(rConfig.data.delivery_taxa_padrao) : "8.00",
+                        delivery_pedido_minimo: rConfig.data.delivery_pedido_minimo ? String(rConfig.data.delivery_pedido_minimo) : "0.00",
+                        delivery_modo: rConfig.data.delivery_modo || "km",
+                        delivery_taxa_base: rConfig.data.delivery_taxa_base ? String(rConfig.data.delivery_taxa_base) : "6.00",
+                        delivery_taxa_km: rConfig.data.delivery_taxa_km ? String(rConfig.data.delivery_taxa_km) : "2.00",
+                        delivery_raio_maximo: rConfig.data.delivery_raio_maximo ? String(rConfig.data.delivery_raio_maximo) : "12.00"
                     });
                 }
                 if (!form.categoria && rCats.data.length > 0) {
@@ -331,6 +360,49 @@ export default function Admin() {
         }
     };
 
+    const handleSalvarConfigDelivery = async (e) => {
+        e.preventDefault();
+        setErro("");
+        setMensagem("");
+        setSalvandoDelivery(true);
+        try {
+            await api.put("/config/delivery", configDelivery);
+            setMensagem("Configurações de Delivery salvas com sucesso!");
+        } catch (err) {
+            setErro(err.response?.data?.erro || "Erro ao salvar configurações de delivery.");
+        } finally {
+            setSalvandoDelivery(false);
+        }
+    };
+
+    const handleSalvarBairro = async (e) => {
+        e.preventDefault();
+        setErro("");
+        setMensagem("");
+        setSalvandoBairro(true);
+        try {
+            await api.post("/config/delivery/bairros", formBairro);
+            setMensagem(formBairro.id ? "Bairro atualizado com sucesso!" : "Novo bairro cadastrado com sucesso!");
+            setFormBairro({ id: null, nome: "", taxa: "8.00", tempo_estimado: "40 a 55 min", ativo: true });
+            carregarTudo();
+        } catch (err) {
+            setErro(err.response?.data?.erro || "Erro ao salvar bairro.");
+        } finally {
+            setSalvandoBairro(false);
+        }
+    };
+
+    const handleExcluirBairro = async (id, nome) => {
+        if (!window.confirm(`Remover o bairro "${nome}" da lista de entrega?`)) return;
+        try {
+            await api.delete(`/config/delivery/bairros/${id}`);
+            setMensagem(`Bairro "${nome}" removido com sucesso.`);
+            carregarTudo();
+        } catch (err) {
+            setErro(err.response?.data?.erro || "Erro ao excluir bairro.");
+        }
+    };
+
     // Pratos filtrados e ordenados de forma idêntica ao cardápio
     const pratosFiltrados = pratos
         .filter(p => {
@@ -421,6 +493,7 @@ export default function Admin() {
                     <button onClick={() => setAba("selos")}      className="admin-aba" style={{ ...styles.aba, ...(aba === "selos"      ? styles.abaAtiva : {}) }}>🏷️ Selos / Flags</button>
                     <button onClick={() => setAba("categorias")} className="admin-aba" style={{ ...styles.aba, ...(aba === "categorias" ? styles.abaAtiva : {}) }}>📂 Categorias</button>
                     <button onClick={() => setAba("happyhour")}  className="admin-aba" style={{ ...styles.aba, ...(aba === "happyhour"  ? styles.abaAtiva : {}) }}>⚡ Happy Hour</button>
+                    <button onClick={() => setAba("delivery")}   className="admin-aba" style={{ ...styles.aba, ...(aba === "delivery"   ? styles.abaAtiva : {}) }}>🛵 Delivery / Frete</button>
                     <button onClick={() => setAba("qrcode")}     className="admin-aba" style={{ ...styles.aba, ...(aba === "qrcode"     ? styles.abaAtiva : {}) }}>📱 QR Code</button>
                 </div>
             </div>
@@ -1330,21 +1403,277 @@ export default function Admin() {
                 </div>
             )}
 
+            {/* ── ABA DELIVERY / FRETE POR BAIRRO ── */}
+            {aba === "delivery" && (
+                <div className="admin-body" style={{ ...styles.body, gridTemplateColumns: "1fr 1.3fr", gap: "1.5rem" }}>
+                    
+                    {/* Coluna 1: Configurações Gerais de Delivery + Formulário de Bairro */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                        {/* Configurações Gerais */}
+                        <div className="admin-card" style={styles.card}>
+                            <h2 className="admin-card-titulo" style={styles.cardTitulo}>
+                                🛵 Configuração Geral de Entregas
+                            </h2>
+                            <form onSubmit={handleSalvarConfigDelivery} style={styles.form}>
+                                {/* Ativar / Pausar Delivery */}
+                                <div style={styles.grupo}>
+                                    <label style={styles.label}>Status do Serviço de Delivery</label>
+                                    <div
+                                        style={styles.hhToggle}
+                                        onClick={() => setConfigDelivery(c => ({ ...c, delivery_ativo: !c.delivery_ativo }))}
+                                    >
+                                        <div style={{ ...styles.hhToggleBox, ...(configDelivery.delivery_ativo ? styles.hhToggleAtivo : {}) }}>
+                                            <div style={{ ...styles.hhToggleCircle, ...(configDelivery.delivery_ativo ? styles.hhToggleCircleAtivo : {}) }} />
+                                        </div>
+                                        <div>
+                                            <p style={styles.hhToggleLabel}>
+                                                {configDelivery.delivery_ativo ? "🟢 Delivery Aberto (Aceitando Pedidos)" : "🔴 Delivery Pausado (Cozinha Cheia / Fechado)"}
+                                            </p>
+                                            <p style={styles.hhToggleSub}>
+                                                {configDelivery.delivery_ativo ? "Clientes podem selecionar entrega e calcular frete." : "Avisa no carrinho que entregas estão pausadas temporariamente."}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
+                                    <div style={styles.grupo}>
+                                        <label style={styles.label}>Taxa Base de Saída (R$)</label>
+                                        <input
+                                            type="number"
+                                            step="0.50"
+                                            value={configDelivery.delivery_taxa_base}
+                                            onChange={(e) => setConfigDelivery(c => ({ ...c, delivery_taxa_base: e.target.value }))}
+                                            placeholder="6.00"
+                                            style={styles.input}
+                                        />
+                                        <span style={{ fontSize: "0.72rem", color: "#888" }}>Valor inicial (até 2 km)</span>
+                                    </div>
+
+                                    <div style={styles.grupo}>
+                                        <label style={styles.label}>Valor por KM Adicional (R$)</label>
+                                        <input
+                                            type="number"
+                                            step="0.50"
+                                            value={configDelivery.delivery_taxa_km}
+                                            onChange={(e) => setConfigDelivery(c => ({ ...c, delivery_taxa_km: e.target.value }))}
+                                            placeholder="2.00"
+                                            style={styles.input}
+                                        />
+                                        <span style={{ fontSize: "0.72rem", color: "#888" }}>Cobrado a cada km extra</span>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
+                                    <div style={styles.grupo}>
+                                        <label style={styles.label}>Raio Máximo de Entrega (KM)</label>
+                                        <input
+                                            type="number"
+                                            step="1.0"
+                                            value={configDelivery.delivery_raio_maximo}
+                                            onChange={(e) => setConfigDelivery(c => ({ ...c, delivery_raio_maximo: e.target.value }))}
+                                            placeholder="12.00"
+                                            style={styles.input}
+                                        />
+                                        <span style={{ fontSize: "0.72rem", color: "#888" }}>Acima disso, avisa o cliente</span>
+                                    </div>
+
+                                    <div style={styles.grupo}>
+                                        <label style={styles.label}>Taxa Padrão de Fallback (R$)</label>
+                                        <input
+                                            type="number"
+                                            step="0.50"
+                                            value={configDelivery.delivery_taxa_padrao}
+                                            onChange={(e) => setConfigDelivery(c => ({ ...c, delivery_taxa_padrao: e.target.value }))}
+                                            placeholder="8.00"
+                                            style={styles.input}
+                                        />
+                                        <span style={{ fontSize: "0.72rem", color: "#888" }}>Caso sem GPS/distância</span>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
+                                    <div style={styles.grupo}>
+                                        <label style={styles.label}>Tempo Médio de Espera</label>
+                                        <input
+                                            type="text"
+                                            value={configDelivery.delivery_tempo}
+                                            onChange={(e) => setConfigDelivery(c => ({ ...c, delivery_tempo: e.target.value }))}
+                                            placeholder="40 a 60 min"
+                                            style={styles.input}
+                                        />
+                                    </div>
+
+                                    <div style={styles.grupo}>
+                                        <label style={styles.label}>Pedido Mínimo (R$)</label>
+                                        <input
+                                            type="number"
+                                            step="1.00"
+                                            value={configDelivery.delivery_pedido_minimo}
+                                            onChange={(e) => setConfigDelivery(c => ({ ...c, delivery_pedido_minimo: e.target.value }))}
+                                            placeholder="0.00"
+                                            style={styles.input}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button style={styles.btnAdicionar} type="submit" disabled={salvandoDelivery}>
+                                    {salvandoDelivery ? "Salvando..." : "💾 Salvar Regras de Delivery"}
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* Cadastro / Edição de Bairro */}
+                        <div className="admin-card" style={styles.card}>
+                            <h2 className="admin-card-titulo" style={styles.cardTitulo}>
+                                {formBairro.id ? "✏️ Editar Bairro Atendido" : "➕ Adicionar Novo Bairro"}
+                            </h2>
+                            <form onSubmit={handleSalvarBairro} style={styles.form}>
+                                <div style={styles.grupo}>
+                                    <label style={styles.label}>Nome do Bairro</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formBairro.nome}
+                                        onChange={(e) => setFormBairro(b => ({ ...b, nome: e.target.value }))}
+                                        placeholder="Ex: Derby, Boa Vista, Madalena..."
+                                        style={styles.input}
+                                    />
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
+                                    <div style={styles.grupo}>
+                                        <label style={styles.label}>Taxa de Entrega (R$)</label>
+                                        <input
+                                            type="number"
+                                            step="0.50"
+                                            required
+                                            value={formBairro.taxa}
+                                            onChange={(e) => setFormBairro(b => ({ ...b, taxa: e.target.value }))}
+                                            placeholder="10.00"
+                                            style={styles.input}
+                                        />
+                                    </div>
+                                    <div style={styles.grupo}>
+                                        <label style={styles.label}>Previsão (Minutos)</label>
+                                        <input
+                                            type="text"
+                                            value={formBairro.tempo_estimado}
+                                            onChange={(e) => setFormBairro(b => ({ ...b, tempo_estimado: e.target.value }))}
+                                            placeholder="40 a 55 min"
+                                            style={styles.input}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", gap: "0.8rem" }}>
+                                    <button style={styles.btnAdicionar} type="submit" disabled={salvandoBairro}>
+                                        {salvandoBairro ? "Salvando..." : (formBairro.id ? "💾 Atualizar Bairro" : "➕ Cadastrar Bairro")}
+                                    </button>
+                                    {formBairro.id && (
+                                        <button
+                                            type="button"
+                                            style={styles.btnCancelar}
+                                            onClick={() => setFormBairro({ id: null, nome: "", taxa: "8.00", tempo_estimado: "40 a 55 min", ativo: true })}
+                                        >
+                                            Cancelar
+                                        </button>
+                                    )}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    {/* Coluna 2: Tabela de Bairros Atendidos */}
+                    <div className="admin-card" style={styles.card}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                            <div>
+                                <h2 className="admin-card-titulo" style={{ ...styles.cardTitulo, borderBottom: "none", marginBottom: "0.2rem", paddingBottom: 0 }}>
+                                    🗺️ Bairros Atendidos ({bairrosDelivery.length})
+                                </h2>
+                                <p style={{ fontSize: "0.8rem", color: "#888" }}>
+                                    O cliente digita o CEP no carrinho e o valor do frete é aplicado automaticamente.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Campo de Busca Rápida de Bairro */}
+                        <div style={{ marginBottom: "1rem" }}>
+                            <input
+                                type="text"
+                                placeholder="🔍 Buscar bairro na lista..."
+                                value={buscaBairroAdmin}
+                                onChange={(e) => setBuscaBairroAdmin(e.target.value)}
+                                style={{ ...styles.input, background: "#fff" }}
+                            />
+                        </div>
+
+                        <div style={{ maxHeight: "600px", overflowY: "auto", border: "1px solid #f0ebe3", borderRadius: "10px" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+                                <thead>
+                                    <tr style={{ background: "#f8f5f0", borderBottom: "2px solid #e8e0d5" }}>
+                                        <th style={{ padding: "0.75rem 1rem", fontWeight: "700", color: "#444" }}>Bairro</th>
+                                        <th style={{ padding: "0.75rem", fontWeight: "700", color: "#444" }}>Taxa</th>
+                                        <th style={{ padding: "0.75rem", fontWeight: "700", color: "#444" }}>Previsão</th>
+                                        <th style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: "700", color: "#444" }}>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bairrosDelivery
+                                        .filter(b => b.nome.toLowerCase().includes(buscaBairroAdmin.toLowerCase()))
+                                        .map((b) => (
+                                            <tr key={b.id} style={{ borderBottom: "1px solid #f0ebe3" }}>
+                                                <td style={{ padding: "0.75rem 1rem", fontWeight: "600", color: "#1a1a1a" }}>
+                                                    📍 {b.nome}
+                                                </td>
+                                                <td style={{ padding: "0.75rem", fontWeight: "700", color: "#166534" }}>
+                                                    R$ {parseFloat(b.taxa).toFixed(2).replace(".", ",")}
+                                                </td>
+                                                <td style={{ padding: "0.75rem", color: "#666", fontSize: "0.8rem" }}>
+                                                    ⏱️ {b.tempo_estimado || "40-55 min"}
+                                                </td>
+                                                <td style={{ padding: "0.75rem 1rem", textAlign: "right", whiteSpace: "nowrap" }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormBairro({ id: b.id, nome: b.nome, taxa: String(b.taxa), tempo_estimado: b.tempo_estimado || "", ativo: !!b.ativo })}
+                                                        style={{ ...styles.btnEditar, marginRight: "0.4rem", padding: "0.3rem 0.6rem" }}
+                                                        title="Editar Bairro"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleExcluirBairro(b.id, b.nome)}
+                                                        style={{ ...styles.btnDel, padding: "0.3rem 0.6rem" }}
+                                                        title="Excluir Bairro"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── ABA QR CODE ── */}
             {aba === "qrcode" && (
                 <div className="admin-body" style={{ ...styles.body, gridTemplateColumns: "1fr", maxWidth: "800px" }}>
-                    <div className="admin-card" style={{ ...styles.card, textAlign: "center", padding: "2.5rem 1.5rem" }}>
-                        <div style={{ display: "inline-block", background: "#fff8e7", padding: "0.8rem", borderRadius: "50%", marginBottom: "1rem" }}>
+                    <div className="admin-card area-impressao-qrcode" style={{ ...styles.card, textAlign: "center", padding: "2.5rem 1.5rem" }}>
+                        <div className="no-print" style={{ display: "inline-block", background: "#fff8e7", padding: "0.8rem", borderRadius: "50%", marginBottom: "1rem" }}>
                             <span style={{ fontSize: "2.5rem" }}>📱</span>
                         </div>
-                        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem", fontWeight: "700", color: "#1a1a1a", marginBottom: "0.5rem" }}>
+                        <h2 className="titulo-impressao-qrcode" style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem", fontWeight: "700", color: "#1a1a1a", marginBottom: "0.5rem" }}>
                             QR Code do Cardápio
                         </h2>
-                        <p style={{ color: "#777", fontSize: "0.95rem", maxWidth: "480px", margin: "0 auto 1.5rem", lineHeight: "1.6" }}>
+                        <p className="no-print" style={{ color: "#777", fontSize: "0.95rem", maxWidth: "480px", margin: "0 auto 1.5rem", lineHeight: "1.6" }}>
                             Imprima ou mostre este QR Code nas mesas para os clientes acessarem o cardápio direto pelo celular!
                         </p>
 
-                        <div style={{ background: "#faf8f5", border: "2px dashed #e8e0d5", borderRadius: "16px", padding: "1.5rem", display: "inline-block", maxWidth: "100%" }}>
+                        <div className="box-qrcode-print" style={{ background: "#faf8f5", border: "2px dashed #e8e0d5", borderRadius: "16px", padding: "1.5rem", display: "inline-block", maxWidth: "100%" }}>
                             <QRCodeSVG
                                 value={typeof window !== "undefined" ? `${window.location.origin}/` : "http://localhost:5173"}
                                 size={220}
@@ -1352,12 +1681,12 @@ export default function Admin() {
                                 includeMargin={true}
                                 style={{ maxWidth: "100%", height: "auto" }}
                             />
-                            <p style={{ marginTop: "1rem", fontSize: "0.85rem", fontWeight: "600", color: "#333", wordBreak: "break-all" }}>
+                            <p className="url-qrcode-print" style={{ marginTop: "1rem", fontSize: "0.85rem", fontWeight: "600", color: "#333", wordBreak: "break-all" }}>
                                 {typeof window !== "undefined" ? `${window.location.origin}/` : "http://localhost:5173"}
                             </p>
                         </div>
 
-                        <div style={{ marginTop: "1.8rem", display: "flex", justifyContent: "center" }}>
+                        <div className="no-print" style={{ marginTop: "1.8rem", display: "flex", justifyContent: "center" }}>
                             <button
                                 onClick={() => window.print()}
                                 style={{ ...styles.btnAdicionar, padding: "0.8rem 2rem", borderRadius: "50px", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
