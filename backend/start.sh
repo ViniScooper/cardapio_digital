@@ -6,6 +6,7 @@ node migrar-banco-completo.js || true
 node seed-cardapio-real.js || true
 node migrar-engenharia.js || true
 node migrar-selos.js || true
+node migrar-delivery.js || true
 
 echo "✅ [Boteco API] Migrações prontas! Iniciando servidor..."
 exec node server.js
