@@ -388,7 +388,17 @@ export default function Home() {
                     <div className="hero-btns" style={styles.heroBtns}>
                         <a href="#cardapio" className="hero-btn" style={styles.heroBtn}>Ver Cardápio</a>
                         {config.hh_ativo && happyHourPratos.length > 0 && (
-                            <a href="#happy-hour" className="hero-btn" style={styles.heroBtnHH}>🍺 Happy Hour</a>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    selecionarCategoria("Happy Hour");
+                                    document.getElementById("cardapio")?.scrollIntoView({ behavior: "smooth" });
+                                }}
+                                className="hero-btn"
+                                style={styles.heroBtnHH}
+                            >
+                                🍺 Happy Hour
+                            </button>
                         )}
                     </div>
                 </div>
@@ -421,14 +431,21 @@ export default function Home() {
                             })}
 
                             {config.hh_ativo && happyHourPratos.length > 0 && (
-                                <a
-                                    href="#happy-hour"
-                                    className="cat-nav-item"
-                                    style={{ ...styles.catNavItem, border: "1px solid #e8b84b", background: "rgba(232,184,75,0.1)", color: "#b38210" }}
+                                <button
+                                    type="button"
+                                    onClick={() => selecionarCategoria("Happy Hour")}
+                                    className={`cat-nav-item ${categoriaAtiva === "Happy Hour" ? "cat-nav-item-active" : ""}`}
+                                    style={{
+                                        ...styles.catNavItem,
+                                        cursor: "pointer",
+                                        border: categoriaAtiva === "Happy Hour" ? "1.5px solid #e8b84b" : "1px solid #e8b84b",
+                                        background: categoriaAtiva === "Happy Hour" ? "#111" : "rgba(232,184,75,0.1)",
+                                        color: categoriaAtiva === "Happy Hour" ? "#e8b84b" : "#b38210"
+                                    }}
                                 >
                                     <span>⚡</span>
                                     <span>Happy Hour</span>
-                                </a>
+                                </button>
                             )}
 
                             <a
@@ -458,6 +475,44 @@ export default function Home() {
                         {(() => {
                             const catExibida = categoriaAtiva || nomesCategoria[0];
                             if (!catExibida) return null;
+
+                            // Se a categoria selecionada for o Happy Hour
+                            if (catExibida === "Happy Hour") {
+                                return (
+                                    <section id="happy-hour" className="hh-section" style={styles.happyHourSection}>
+                                        <div style={styles.hhOverlay} />
+                                        <div style={styles.hhContent}>
+                                            <div style={styles.hhHeader}>
+                                                <p style={styles.hhLabel}>⚡ Promoções Especiais</p>
+                                                <h2 style={styles.hhTitle}>Happy Hour</h2>
+                                                <div style={styles.hhBadgeHorario}>
+                                                    <span>📅 {config.hh_dias}</span>
+                                                    <span style={{ opacity: 0.5 }}>•</span>
+                                                    <span>⏰ Das {config.hh_inicio} às {config.hh_fim}</span>
+                                                </div>
+                                                <p style={styles.hhSub}>
+                                                    Preços e descontos exclusivos para você curtir a noite no Boteco!
+                                                </p>
+                                                <div style={{ ...styles.sectionDivider, background: "linear-gradient(90deg, #f0c040, #e8b84b)" }} />
+                                            </div>
+                                            <div className="hh-grid" style={styles.hhGrid}>
+                                                {happyHourPratos.map(p => {
+                                                    const itemNoCarrinho = carrinho.find(c => c.id === p.id);
+                                                    return (
+                                                        <PratoCard
+                                                            key={p.id}
+                                                            prato={p}
+                                                            happyHour
+                                                            onAdicionar={adicionarAoCarrinho}
+                                                            qtdNoCarrinho={itemNoCarrinho?.quantidade || 0}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </section>
+                                );
+                            }
 
                             const pratosDaCat = pratos
                                 .filter(p => p.categoria === catExibida && !p.happy_hour)
@@ -505,42 +560,6 @@ export default function Home() {
                             );
                         })()}
                     </div>
-
-                    {/* ── HAPPY HOUR ───────────────────────────────── */}
-                    {config.hh_ativo && happyHourPratos.length > 0 && (
-                        <section id="happy-hour" className="hh-section" style={styles.happyHourSection}>
-                            <div style={styles.hhOverlay} />
-                            <div style={styles.hhContent}>
-                                <div style={styles.hhHeader}>
-                                    <p style={styles.hhLabel}>⚡ Promoções Especiais</p>
-                                    <h2 style={styles.hhTitle}>Happy Hour</h2>
-                                    <div style={styles.hhBadgeHorario}>
-                                        <span>📅 {config.hh_dias}</span>
-                                        <span style={{ opacity: 0.5 }}>•</span>
-                                        <span>⏰ Das {config.hh_inicio} às {config.hh_fim}</span>
-                                    </div>
-                                    <p style={styles.hhSub}>
-                                        Preços e descontos exclusivos para você curtir a noite no Boteco!
-                                    </p>
-                                    <div style={{ ...styles.sectionDivider, background: "linear-gradient(90deg, #f0c040, #e8b84b)" }} />
-                                </div>
-                                <div className="hh-grid" style={styles.hhGrid}>
-                                    {happyHourPratos.map(p => {
-                                        const itemNoCarrinho = carrinho.find(c => c.id === p.id);
-                                        return (
-                                            <PratoCard
-                                                key={p.id}
-                                                prato={p}
-                                                happyHour
-                                                onAdicionar={adicionarAoCarrinho}
-                                                qtdNoCarrinho={itemNoCarrinho?.quantidade || 0}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </section>
-                    )}
 
 
                     {/* ── BARRA FLUTUANTE DO CARRINHO (WHATSAPP) ── */}
