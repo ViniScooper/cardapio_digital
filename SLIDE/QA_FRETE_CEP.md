@@ -174,6 +174,44 @@ Essa URL respondeu HTML do frontend para as rotas da API, em vez de JSON. Conseq
 
 **Ação necessária antes do aceite do cliente:** configurar uma URL persistente de backend HTTPS no Vercel e repetir os cenários no carrinho publicado.
 
+## Reteste do site publicado — 08/09/2026
+
+O frontend da Vercel abriu, mas o fluxo completo ficou bloqueado pelo backend configurado no bundle:
+
+```text
+https://peers-discussed-gadgets-metres.trycloudflare.com
+```
+
+### Evidências observadas
+
+- A página HTML e o layout carregaram.
+- O cardápio exibiu `Não foi possível carregar o cardápio.`
+- As chamadas para `/pratos`, `/categorias`, `/config` e `/config/delivery/bairros` falharam por CORS.
+- O console registrou: `No 'Access-Control-Allow-Origin' header is present`.
+- O cálculo de frete também não pôde ser executado no site publicado.
+- O endpoint direto do túnel não entregou JSON utilizável para os testes.
+
+### Classificação atual
+
+| Área | Resultado |
+|---|---|
+| Shell visual da Vercel | PASSOU |
+| Cardápio público com dados | BLOQUEADO |
+| Imagens e categorias | NÃO TESTÁVEL enquanto API estiver bloqueada |
+| Login e painel | BLOQUEADO pela mesma API |
+| Carrinho e frete | BLOQUEADO pela mesma API |
+| QR Code estático | Não representa disponibilidade da API |
+
+### Ação obrigatória
+
+Antes de considerar o deploy aprovado, configurar um backend persistente com CORS permitindo exatamente:
+
+```text
+https://cardapiodigital-gamma.vercel.app
+```
+
+Depois repetir o QA-FRETE-01 até QA-FRETE-13 no domínio publicado. O ambiente local também precisa estar com backend e banco ativos para validar o fluxo fora da Vercel; os terminais locais encerraram com código 1 nesta rodada.
+
 ## Critérios de aceite
 
 A feature só deve ser considerada aprovada quando:
