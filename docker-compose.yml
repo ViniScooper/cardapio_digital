@@ -38,7 +38,7 @@ services:
       DB_PORT: 3306
       JWT_SECRET: restaurante_jwt_secret_2024
     ports:
-      - "3001:3001"
+      - "3002:3001"
     volumes:
       - ./backend/uploads:/app/uploads
     depends_on:
