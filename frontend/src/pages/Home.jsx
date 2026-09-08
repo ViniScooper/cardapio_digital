@@ -41,7 +41,6 @@ export default function Home() {
     });
     const [loading,       setLoading]       = useState(true);
     const [erro,          setErro]          = useState("");
-    const [menuCatAberto, setMenuCatAberto] = useState(false);
     const [categoriaAtiva, setCategoriaAtiva] = useState("");
     const categoriaBarraRef = useRef(null);
 
@@ -321,31 +320,15 @@ export default function Home() {
 
     const criarIdCategoria = (nome) => `cat-${nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 
+    // Define a primeira categoria como padrão ao carregar
     useEffect(() => {
         if (!nomesCategoria.length) return;
-
-        setCategoriaAtiva(criarIdCategoria(nomesCategoria[0]));
-        const secoes = [...nomesCategoria.map(criarIdCategoria), "happy-hour", "avaliacoes"]
-            .map(id => document.getElementById(id))
-            .filter(Boolean);
-        const atualizarCategoriaAtiva = () => {
-            const limite = 150;
-            const atual = secoes
-                .filter(secao => secao.getBoundingClientRect().top <= limite)
-                .at(-1);
-            if (atual) setCategoriaAtiva(atual.id);
-        };
-        const observer = new IntersectionObserver(atualizarCategoriaAtiva, { rootMargin: "-150px 0px -55% 0px", threshold: [0, 0.25, 0.6] });
-
-        secoes.forEach(secao => observer.observe(secao));
-        window.addEventListener("scroll", atualizarCategoriaAtiva, { passive: true });
-        atualizarCategoriaAtiva();
-        return () => {
-            observer.disconnect();
-            window.removeEventListener("scroll", atualizarCategoriaAtiva);
-        };
+        if (!categoriaAtiva || !nomesCategoria.includes(categoriaAtiva)) {
+            setCategoriaAtiva(nomesCategoria[0]);
+        }
     }, [nomesCategoria.join("|")]);
 
+    // Centraliza o botão da categoria ativa na barra horizontal
     useEffect(() => {
         const itemAtivo = document.querySelector(".cat-nav-item-active");
         const barra = itemAtivo?.closest(".cat-nav-bar");
@@ -354,6 +337,15 @@ export default function Home() {
             barra.scrollTo({ left: Math.max(0, alvo), behavior: "smooth" });
         }
     }, [categoriaAtiva]);
+
+    const selecionarCategoria = (catNome) => {
+        setCategoriaAtiva(catNome);
+        const cardapioEl = document.getElementById("cardapio");
+        if (cardapioEl) {
+            const topo = cardapioEl.getBoundingClientRect().top + window.scrollY - 130;
+            window.scrollTo({ top: Math.max(0, topo), behavior: "smooth" });
+        }
+    };
 
     return (
         <div>
@@ -407,85 +399,24 @@ export default function Home() {
 
             {!loading && !erro && (
                 <>
-                    {/* ── MENU LATERAL / DRAWER DE CATEGORIAS NO COMPUTADOR ── */}
-                    {menuCatAberto && (
-                        <div className="cat-drawer-overlay" onClick={() => setMenuCatAberto(false)}>
-                            <div className="cat-drawer-panel" onClick={(e) => e.stopPropagation()}>
-                                <div className="cat-drawer-header">
-                                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                                        <span style={{ fontSize: "1.5rem" }}>📂</span>
-                                        <div>
-                                            <h3 style={{ margin: 0, fontSize: "1.15rem", fontFamily: "'Playfair Display', serif" }}>
-                                                Categorias do Cardápio
-                                            </h3>
-                                            <p style={{ margin: 0, fontSize: "0.75rem", color: "#888" }}>
-                                                Navegue direto para a seção que desejar
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button 
-                                        className="cat-drawer-close"
-                                        onClick={() => setMenuCatAberto(false)}
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-
-                                <div className="cat-drawer-list">
-                                    {nomesCategoria.map((cat) => {
-                                        const idAlvo = criarIdCategoria(cat);
-                                        return (
-                                            <a
-                                                key={cat}
-                                                href={`#${idAlvo}`}
-                                                className="cat-drawer-item"
-                                                onClick={() => setMenuCatAberto(false)}
-                                            >
-                                                <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-                                                    <span style={{ fontSize: "1.3rem" }}>{getIconeCategoria(cat)}</span>
-                                                    <span style={{ fontWeight: "600", fontSize: "0.92rem", color: "#222" }}>{cat}</span>
-                                                </div>
-                                                <span style={{ color: "#bbb", fontSize: "1.1rem", fontWeight: "700" }}>›</span>
-                                            </a>
-                                        );
-                                    })}
-
-                                    {config.hh_ativo && happyHourPratos.length > 0 && (
-                                        <a
-                                            href="#happy-hour"
-                                            className="cat-drawer-item cat-drawer-hh"
-                                            onClick={() => setMenuCatAberto(false)}
-                                        >
-                                            <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-                                                <span style={{ fontSize: "1.3rem" }}>⚡</span>
-                                                <span style={{ fontWeight: "700", fontSize: "0.92rem", color: "#b38210" }}>Happy Hour Especial</span>
-                                            </div>
-                                            <span style={{ color: "#e8b84b", fontSize: "1.1rem", fontWeight: "700" }}>›</span>
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     {/* ── BARRA FIXA DE NAVEGAÇÃO RÁPIDA POR CATEGORIA (EXCLUSIVA MOBILE) ── */}
                     <div className="cat-nav-shell">
                         <button type="button" className="cat-nav-arrow cat-nav-arrow-left" onClick={() => moverCategorias(-1)} aria-label="Ver categorias anteriores">‹</button>
                         <div ref={categoriaBarraRef} className="cat-nav-bar" style={styles.catNavBar}>
                             <div style={styles.catNavContainer}>
                             {nomesCategoria.map((cat) => {
-                                const idAlvo = criarIdCategoria(cat);
+                                const isAtiva = categoriaAtiva === cat;
                                 return (
-                                    <a
+                                    <button
                                         key={cat}
-                                        href={`#${idAlvo}`}
-                                        className={`cat-nav-item ${categoriaAtiva === idAlvo ? "cat-nav-item-active" : ""}`}
-                                        style={styles.catNavItem}
-                                        aria-current={categoriaAtiva === idAlvo ? "location" : undefined}
+                                        type="button"
+                                        onClick={() => selecionarCategoria(cat)}
+                                        className={`cat-nav-item ${isAtiva ? "cat-nav-item-active" : ""}`}
+                                        style={{ ...styles.catNavItem, cursor: "pointer", border: isAtiva ? "1px solid #111" : "1px solid #e0d9d0" }}
                                     >
                                         <span style={{ fontSize: "1.1rem" }}>{getIconeCategoria(cat)}</span>
                                         <span>{cat}</span>
-                                    </a>
+                                    </button>
                                 );
                             })}
 
@@ -502,9 +433,8 @@ export default function Home() {
 
                             <a
                                 href="#avaliacoes"
-                                className={`cat-nav-item ${categoriaAtiva === "avaliacoes" ? "cat-nav-item-active" : ""}`}
+                                className="cat-nav-item"
                                 style={{ ...styles.catNavItem, borderColor: "#fbbc04", color: "#8a6500" }}
-                                aria-current={categoriaAtiva === "avaliacoes" ? "location" : undefined}
                             >
                                 <span>⭐</span>
                                 <span>Avaliações</span>
@@ -524,10 +454,13 @@ export default function Home() {
                     </div>
 
                     <div id="cardapio">
-                        {/* ── SEÇÕES POR CATEGORIA ─────────────────────── */}
-                        {nomesCategoria.map((cat) => {
+                        {/* ── EXIBIÇÃO DE UMA CATEGORIA POR VEZ (SEM SCROLL INFINITO) ── */}
+                        {(() => {
+                            const catExibida = categoriaAtiva || nomesCategoria[0];
+                            if (!catExibida) return null;
+
                             const pratosDaCat = pratos
-                                .filter(p => p.categoria === cat && !p.happy_hour)
+                                .filter(p => p.categoria === catExibida && !p.happy_hour)
                                 .sort((a, b) => {
                                     const oA = a.ordem_manual || 0;
                                     const oB = b.ordem_manual || 0;
@@ -536,30 +469,41 @@ export default function Home() {
                                     if (oB > 0) return 1;
                                     return 0;
                                 });
-                            if (pratosDaCat.length === 0) return null;
+
                             return (
-                                <section key={cat} id={criarIdCategoria(cat)} className="menu-section" style={styles.section}>
+                                <section key={catExibida} id={criarIdCategoria(catExibida)} className="menu-section" style={styles.section}>
                                     <div style={styles.sectionHeader}>
-                                        <p className="section-label" style={styles.sectionLabel}>{getIconeCategoria(cat)} {cat}</p>
-                                        <h2 style={styles.sectionTitle}>{cat}</h2>
+                                        <p className="section-label" style={styles.sectionLabel}>{getIconeCategoria(catExibida)} {catExibida}</p>
+                                        <h2 style={styles.sectionTitle}>{catExibida}</h2>
+                                        <p style={{ color: "#777", fontSize: "0.9rem", marginTop: "-0.5rem", marginBottom: "1rem" }}>
+                                            {pratosDaCat.length} {pratosDaCat.length === 1 ? "opção disponível" : "opções disponíveis"}
+                                        </p>
                                         <div style={styles.sectionDivider} />
                                     </div>
-                                    <div className="menu-grid" style={styles.grid}>
-                                        {pratosDaCat.map(p => {
-                                            const itemNoCarrinho = carrinho.find(c => c.id === p.id);
-                                            return (
-                                                <PratoCard
-                                                    key={p.id}
-                                                    prato={p}
-                                                    onAdicionar={adicionarAoCarrinho}
-                                                    qtdNoCarrinho={itemNoCarrinho?.quantidade || 0}
-                                                />
-                                            );
-                                        })}
-                                    </div>
+                                    
+                                    {pratosDaCat.length === 0 ? (
+                                        <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#888" }}>
+                                            <p style={{ fontSize: "2rem" }}>🍽️</p>
+                                            <p>Nenhum prato disponível nesta categoria no momento.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="menu-grid" style={styles.grid}>
+                                            {pratosDaCat.map(p => {
+                                                const itemNoCarrinho = carrinho.find(c => c.id === p.id);
+                                                return (
+                                                    <PratoCard
+                                                        key={p.id}
+                                                        prato={p}
+                                                        onAdicionar={adicionarAoCarrinho}
+                                                        qtdNoCarrinho={itemNoCarrinho?.quantidade || 0}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </section>
                             );
-                        })}
+                        })()}
                     </div>
 
                     {/* ── HAPPY HOUR ───────────────────────────────── */}
@@ -597,6 +541,7 @@ export default function Home() {
                             </div>
                         </section>
                     )}
+
 
                     {/* ── BARRA FLUTUANTE DO CARRINHO (WHATSAPP) ── */}
                     {totalItens > 0 && (
