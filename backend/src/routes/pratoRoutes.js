@@ -15,7 +15,7 @@ const {
     reordenarPratos
 } = require("../controllers/pratoController");
 const { verificarToken, apenasAdmin } = require("../middleware/authMiddleware");
-const upload = require("../config/upload");
+const { upload } = require("../config/upload");
 
 // PUT  /pratos/reordenar        — admin: salvar ordem manual dos pratos
 router.put("/reordenar", verificarToken, apenasAdmin, reordenarPratos);

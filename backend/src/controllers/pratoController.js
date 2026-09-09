@@ -30,34 +30,45 @@ const listarPratos = (req, res) => {
     });
 };
 
+const { uploadParaBucket } = require("../config/upload");
+
 // POST /pratos — admin
-const criarPrato = (req, res) => {
+const criarPrato = async (req, res) => {
     const { nome, descricao, preco, categoria, happy_hour, custo, selo, destaque_manual, ordem_manual } = req.body;
 
     if (!nome || !preco) {
         return res.status(400).json({ erro: "Nome e preço são obrigatórios." });
     }
 
-    const imagem     = req.file ? `/uploads/${req.file.filename}` : null;
-    const cat        = categoria || "Cardápio";
-    const isHH       = happy_hour === "true" || happy_hour === true || happy_hour === 1 ? 1 : 0;
-    const vCusto     = custo ? parseFloat(custo) : null;
-    const vSelo      = selo || null;
-    const vDestaque  = destaque_manual || null;
-    const vOrdem     = ordem_manual ? parseInt(ordem_manual, 10) : 0;
+    try {
+        let imagem = null;
+        if (req.file) {
+            imagem = await uploadParaBucket(req.file);
+        }
 
-    const sql = `
-        INSERT INTO prato (nome, descricao, preco, categoria, happy_hour, imagem, custo, selo, destaque_manual, ordem_manual) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, imagem, vCusto, vSelo, vDestaque, vOrdem], (erro, resultado) => {
-        if (erro) return res.status(500).json({ erro: erro.message });
-        res.status(201).json({ mensagem: "Prato cadastrado com sucesso!", id: resultado.insertId });
-    });
+        const cat        = categoria || "Cardápio";
+        const isHH       = happy_hour === "true" || happy_hour === true || happy_hour === 1 ? 1 : 0;
+        const vCusto     = custo ? parseFloat(custo) : null;
+        const vSelo      = selo || null;
+        const vDestaque  = destaque_manual || null;
+        const vOrdem     = ordem_manual ? parseInt(ordem_manual, 10) : 0;
+
+        const sql = `
+            INSERT INTO prato (nome, descricao, preco, categoria, happy_hour, imagem, custo, selo, destaque_manual, ordem_manual) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, imagem, vCusto, vSelo, vDestaque, vOrdem], (erro, resultado) => {
+            if (erro) return res.status(500).json({ erro: erro.message });
+            res.status(201).json({ mensagem: "Prato cadastrado com sucesso!", id: resultado.insertId, imagem });
+        });
+    } catch (err) {
+        console.error("Erro no upload para o bucket:", err);
+        return res.status(500).json({ erro: "Erro ao fazer upload da imagem para o Bucket: " + err.message });
+    }
 };
 
 // PUT /pratos/:id — admin (edição com custo e inteligência)
-const editarPrato = (req, res) => {
+const editarPrato = async (req, res) => {
     const { id } = req.params;
     const { nome, descricao, preco, categoria, happy_hour, custo, selo, destaque_manual, ordem_manual, pedidos_estimados } = req.body;
 
@@ -73,29 +84,34 @@ const editarPrato = (req, res) => {
     const vOrdem    = ordem_manual ? parseInt(ordem_manual, 10) : 0;
     const vPedidos  = pedidos_estimados ? parseInt(pedidos_estimados, 10) : 0;
 
-    if (req.file) {
-        const novaImagem = `/uploads/${req.file.filename}`;
-        const sql = `
-            UPDATE prato 
-            SET nome=?, descricao=?, preco=?, categoria=?, happy_hour=?, imagem=?, custo=?, selo=?, destaque_manual=?, ordem_manual=?, pedidos_estimados=?
-            WHERE id=?
-        `;
-        db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, novaImagem, vCusto, vSelo, vDestaque, vOrdem, vPedidos, id], (erro, resultado) => {
-            if (erro) return res.status(500).json({ erro: erro.message });
-            if (resultado.affectedRows === 0) return res.status(404).json({ erro: "Prato não encontrado." });
-            res.json({ mensagem: "Prato atualizado com sucesso!" });
-        });
-    } else {
-        const sql = `
-            UPDATE prato 
-            SET nome=?, descricao=?, preco=?, categoria=?, happy_hour=?, custo=?, selo=?, destaque_manual=?, ordem_manual=?, pedidos_estimados=?
-            WHERE id=?
-        `;
-        db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, vCusto, vSelo, vDestaque, vOrdem, vPedidos, id], (erro, resultado) => {
-            if (erro) return res.status(500).json({ erro: erro.message });
-            if (resultado.affectedRows === 0) return res.status(404).json({ erro: "Prato não encontrado." });
-            res.json({ mensagem: "Prato atualizado com sucesso!" });
-        });
+    try {
+        if (req.file) {
+            const novaImagem = await uploadParaBucket(req.file);
+            const sql = `
+                UPDATE prato 
+                SET nome=?, descricao=?, preco=?, categoria=?, happy_hour=?, imagem=?, custo=?, selo=?, destaque_manual=?, ordem_manual=?, pedidos_estimados=?
+                WHERE id=?
+            `;
+            db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, novaImagem, vCusto, vSelo, vDestaque, vOrdem, vPedidos, id], (erro, resultado) => {
+                if (erro) return res.status(500).json({ erro: erro.message });
+                if (resultado.affectedRows === 0) return res.status(404).json({ erro: "Prato não encontrado." });
+                res.json({ mensagem: "Prato atualizado com sucesso!", imagem: novaImagem });
+            });
+        } else {
+            const sql = `
+                UPDATE prato 
+                SET nome=?, descricao=?, preco=?, categoria=?, happy_hour=?, custo=?, selo=?, destaque_manual=?, ordem_manual=?, pedidos_estimados=?
+                WHERE id=?
+            `;
+            db.query(sql, [nome, descricao || "", parseFloat(preco), cat, isHH, vCusto, vSelo, vDestaque, vOrdem, vPedidos, id], (erro, resultado) => {
+                if (erro) return res.status(500).json({ erro: erro.message });
+                if (resultado.affectedRows === 0) return res.status(404).json({ erro: "Prato não encontrado." });
+                res.json({ mensagem: "Prato atualizado com sucesso!" });
+            });
+        }
+    } catch (err) {
+        console.error("Erro ao atualizar prato no bucket:", err);
+        return res.status(500).json({ erro: "Erro ao enviar nova imagem para o Bucket: " + err.message });
     }
 };
 
