@@ -107,9 +107,17 @@ export default function Home() {
     };
 
     const subtotalCarrinho = carrinho.reduce((acc, item) => acc + (parseFloat(item.preco) * item.quantidade), 0);
-    const taxaEntrega = (tipoEntrega === "delivery" && freteInfo.calculado && freteInfo.atendido) ? freteInfo.taxa : 0;
-    const totalCarrinho = subtotalCarrinho + taxaEntrega;
     const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+
+    // Configurações de Embalagem Delivery
+    const valorEmbalagemConfig = parseFloat(config?.delivery_taxa_embalagem) || 0;
+    const tipoEmbalagemConfig  = config?.delivery_embalagem_tipo || "pedido";
+    const taxaEmbalagem = (tipoEntrega === "delivery" && valorEmbalagemConfig > 0)
+        ? (tipoEmbalagemConfig === "item" ? valorEmbalagemConfig * totalItens : valorEmbalagemConfig)
+        : 0;
+
+    const taxaEntrega = (tipoEntrega === "delivery" && freteInfo.calculado && freteInfo.atendido) ? freteInfo.taxa : 0;
+    const totalCarrinho = subtotalCarrinho + taxaEntrega + taxaEmbalagem;
 
     // Coordenadas fixas do Boteco do Sivirino (Rua Larga da Feitosa, Encruzilhada, Recife)
     const BOTECO_COORDS = { lat: -8.0455042, lng: -34.9264191 };
@@ -281,10 +289,13 @@ export default function Home() {
         msg += `----------------------------------------\n`;
         if (tipoEntrega === "delivery") {
             msg += `Subtotal dos Pratos: R$ ${subtotalCarrinho.toFixed(2).replace(".", ",")}\n`;
+            if (taxaEmbalagem > 0) {
+                msg += `📦 Taxa de Embalagem${tipoEmbalagemConfig === "item" ? ` (${totalItens} un.)` : ""}: R$ ${taxaEmbalagem.toFixed(2).replace(".", ",")}\n`;
+            }
             msg += `🛵 Taxa de Entrega (${dadosCliente.bairro || "Bairro"}): R$ ${taxaEntrega.toFixed(2).replace(".", ",")}\n`;
             if (freteInfo.tempo) msg += `⏱️ Previsão de Espera: ${freteInfo.tempo}\n`;
             msg += `----------------------------------------\n`;
-            msg += `💰 *VALOR TOTAL COM FRETE:* R$ ${totalCarrinho.toFixed(2).replace(".", ",")}\n`;
+            msg += `💰 *VALOR TOTAL (COM FRETE & EMBALAGEM):* R$ ${totalCarrinho.toFixed(2).replace(".", ",")}\n`;
         } else {
             msg += `💰 *VALOR TOTAL:* R$ ${totalCarrinho.toFixed(2).replace(".", ",")}\n`;
         }
@@ -676,6 +687,17 @@ export default function Home() {
                                                             R$ {subtotalCarrinho.toFixed(2).replace(".", ",")}
                                                         </span>
                                                     </div>
+                                                    {taxaEmbalagem > 0 && (
+                                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem", background: "rgba(245, 158, 11, 0.08)", padding: "0.25rem 0.5rem", borderRadius: "6px" }}>
+                                                            <span style={{ fontSize: "0.86rem", color: "#92400e", display: "flex", alignItems: "center", gap: "5px" }}>
+                                                                <span>📦</span>
+                                                                <span>Taxa de Embalagem {tipoEmbalagemConfig === "item" ? `(${totalItens} un.)` : ""}:</span>
+                                                            </span>
+                                                            <span style={{ fontSize: "0.92rem", fontWeight: "700", color: "#b45309" }}>
+                                                                + R$ {taxaEmbalagem.toFixed(2).replace(".", ",")}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
                                                         <span style={{ fontSize: "0.9rem", color: "#666" }}>
                                                             Taxa de Entrega {dadosCliente.bairro ? `(${dadosCliente.bairro})` : ""}:
@@ -737,10 +759,20 @@ export default function Home() {
                                                         fontWeight: "700",
                                                         color: tipoEntrega === "delivery" ? "#166534" : "#666",
                                                         cursor: "pointer",
-                                                        fontSize: "0.85rem"
+                                                        fontSize: "0.85rem",
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        gap: "2px"
                                                     }}
                                                 >
-                                                    🛵 Delivery / Entrega
+                                                    <span>🛵 Delivery / Entrega</span>
+                                                    {valorEmbalagemConfig > 0 && (
+                                                        <span style={{ fontSize: "0.7rem", fontWeight: "600", color: tipoEntrega === "delivery" ? "#15803d" : "#888" }}>
+                                                            (+ R$ {valorEmbalagemConfig.toFixed(2).replace(".", ",")} embalagem)
+                                                        </span>
+                                                    )}
                                                 </button>
                                             </div>
 

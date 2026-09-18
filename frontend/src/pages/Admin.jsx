@@ -91,7 +91,9 @@ export default function Admin() {
         delivery_modo: "km",
         delivery_taxa_base: "6.00",
         delivery_taxa_km: "2.00",
-        delivery_raio_maximo: "12.00"
+        delivery_raio_maximo: "12.00",
+        delivery_taxa_embalagem: "0.00",
+        delivery_embalagem_tipo: "pedido"
     });
     const [salvandoDelivery, setSalvandoDelivery] = useState(false);
     const [bairrosDelivery, setBairrosDelivery]   = useState([]);
@@ -131,7 +133,9 @@ export default function Admin() {
                         delivery_modo: rConfig.data.delivery_modo || "km",
                         delivery_taxa_base: rConfig.data.delivery_taxa_base ? String(rConfig.data.delivery_taxa_base) : "6.00",
                         delivery_taxa_km: rConfig.data.delivery_taxa_km ? String(rConfig.data.delivery_taxa_km) : "2.00",
-                        delivery_raio_maximo: rConfig.data.delivery_raio_maximo ? String(rConfig.data.delivery_raio_maximo) : "12.00"
+                        delivery_raio_maximo: rConfig.data.delivery_raio_maximo ? String(rConfig.data.delivery_raio_maximo) : "12.00",
+                        delivery_taxa_embalagem: rConfig.data.delivery_taxa_embalagem !== undefined ? String(rConfig.data.delivery_taxa_embalagem) : "0.00",
+                        delivery_embalagem_tipo: rConfig.data.delivery_embalagem_tipo || "pedido"
                     });
                 }
                 if (!form.categoria && rCats.data.length > 0) {
@@ -1404,6 +1408,46 @@ export default function Admin() {
                                             placeholder="0.00"
                                             style={styles.input}
                                         />
+                                    </div>
+                                </div>
+
+                                {/* Taxa de Embalagem para Delivery */}
+                                <div style={{ background: "#fffdfa", border: "1.5px solid #f0dfc0", borderRadius: "10px", padding: "1rem", marginTop: "0.2rem", marginBottom: "0.5rem" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.8rem" }}>
+                                        <span style={{ fontSize: "1.2rem" }}>📦</span>
+                                        <div>
+                                            <p style={{ margin: 0, fontWeight: "700", fontSize: "0.92rem", color: "#8a5800" }}>Taxa de Embalagem (Apenas no Delivery)</p>
+                                            <p style={{ margin: 0, fontSize: "0.75rem", color: "#a16207" }}>Cobrada automaticamente quando o cliente escolher entrega (salão/mesa fica isento)</p>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
+                                        <div style={styles.grupo}>
+                                            <label style={{ ...styles.label, fontSize: "0.8rem" }}>Valor da Embalagem (R$)</label>
+                                            <input
+                                                type="number"
+                                                step="0.50"
+                                                min="0"
+                                                value={configDelivery.delivery_taxa_embalagem}
+                                                onChange={(e) => setConfigDelivery(c => ({ ...c, delivery_taxa_embalagem: e.target.value }))}
+                                                placeholder="0.00"
+                                                style={{ ...styles.input, background: "#fff", fontWeight: "700" }}
+                                            />
+                                            <span style={{ fontSize: "0.72rem", color: "#888" }}>Ex: 2.50 (deixe 0 para não cobrar)</span>
+                                        </div>
+
+                                        <div style={styles.grupo}>
+                                            <label style={{ ...styles.label, fontSize: "0.8rem" }}>Modo de Cobrança</label>
+                                            <select
+                                                value={configDelivery.delivery_embalagem_tipo || "pedido"}
+                                                onChange={(e) => setConfigDelivery(c => ({ ...c, delivery_embalagem_tipo: e.target.value }))}
+                                                style={{ ...styles.input, background: "#fff", cursor: "pointer" }}
+                                            >
+                                                <option value="pedido">Taxa Fixa por Pedido (ex: + R$ 3,00)</option>
+                                                <option value="item">Taxa por Item/Prato (ex: + R$ 2,00 por prato)</option>
+                                            </select>
+                                            <span style={{ fontSize: "0.72rem", color: "#888" }}>Fixo no pedido ou multiplicada pelos itens</span>
+                                        </div>
                                     </div>
                                 </div>
 

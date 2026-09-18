@@ -29,7 +29,9 @@ const obterConfig = (req, res) => {
                 delivery_ativo: 1,
                 delivery_tempo: "40 a 60 min",
                 delivery_taxa_padrao: 8.00,
-                delivery_pedido_minimo: 0.00
+                delivery_pedido_minimo: 0.00,
+                delivery_taxa_embalagem: 0.00,
+                delivery_embalagem_tipo: "pedido"
             });
         }
         res.json(resultado[0]);
@@ -76,7 +78,9 @@ const atualizarDeliveryConfig = (req, res) => {
         delivery_modo,
         delivery_taxa_km,
         delivery_taxa_base,
-        delivery_raio_maximo
+        delivery_raio_maximo,
+        delivery_taxa_embalagem,
+        delivery_embalagem_tipo
     } = req.body;
 
     const ativo = (delivery_ativo === true || delivery_ativo === "true" || delivery_ativo === 1 || delivery_ativo === "1") ? 1 : 0;
@@ -87,13 +91,16 @@ const atualizarDeliveryConfig = (req, res) => {
     const taxaKm = parseFloat(delivery_taxa_km) || 2.00;
     const taxaBase = parseFloat(delivery_taxa_base) || 6.00;
     const raioMax = parseFloat(delivery_raio_maximo) || 12.00;
+    const taxaEmbalagem = parseFloat(delivery_taxa_embalagem) || 0.00;
+    const tipoEmbalagem = delivery_embalagem_tipo || "pedido";
 
     const sql = `
         INSERT INTO configuracao (
             id, delivery_ativo, delivery_tempo, delivery_taxa_padrao, delivery_pedido_minimo,
-            delivery_modo, delivery_taxa_km, delivery_taxa_base, delivery_raio_maximo
+            delivery_modo, delivery_taxa_km, delivery_taxa_base, delivery_raio_maximo,
+            delivery_taxa_embalagem, delivery_embalagem_tipo
         )
-        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             delivery_ativo = VALUES(delivery_ativo),
             delivery_tempo = VALUES(delivery_tempo),
@@ -102,10 +109,12 @@ const atualizarDeliveryConfig = (req, res) => {
             delivery_modo = VALUES(delivery_modo),
             delivery_taxa_km = VALUES(delivery_taxa_km),
             delivery_taxa_base = VALUES(delivery_taxa_base),
-            delivery_raio_maximo = VALUES(delivery_raio_maximo)
+            delivery_raio_maximo = VALUES(delivery_raio_maximo),
+            delivery_taxa_embalagem = VALUES(delivery_taxa_embalagem),
+            delivery_embalagem_tipo = VALUES(delivery_embalagem_tipo)
     `;
 
-    db.query(sql, [ativo, tempo, taxaPadrao, pedidoMinimo, modo, taxaKm, taxaBase, raioMax], (erro) => {
+    db.query(sql, [ativo, tempo, taxaPadrao, pedidoMinimo, modo, taxaKm, taxaBase, raioMax, taxaEmbalagem, tipoEmbalagem], (erro) => {
         if (erro) return res.status(500).json({ erro: erro.message });
         res.json({
             mensagem: "Configurações de Delivery atualizadas com sucesso!",
@@ -117,7 +126,9 @@ const atualizarDeliveryConfig = (req, res) => {
                 delivery_modo: modo,
                 delivery_taxa_km: taxaKm,
                 delivery_taxa_base: taxaBase,
-                delivery_raio_maximo: raioMax
+                delivery_raio_maximo: raioMax,
+                delivery_taxa_embalagem: taxaEmbalagem,
+                delivery_embalagem_tipo: tipoEmbalagem
             }
         });
     });

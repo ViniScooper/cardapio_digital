@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS configuracao (
     hh_inicio VARCHAR(10) DEFAULT '19:00',
     hh_fim VARCHAR(10) DEFAULT '22:00',
     hh_apenas_local TINYINT(1) DEFAULT 1,
+    delivery_taxa_embalagem DECIMAL(10,2) DEFAULT 0.00,
+    delivery_embalagem_tipo VARCHAR(20) DEFAULT 'pedido',
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 

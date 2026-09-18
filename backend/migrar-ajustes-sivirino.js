@@ -52,6 +52,21 @@ async function migrar() {
             console.log("ℹ️ Coluna 'hh_apenas_local' já existe na tabela 'configuracao'.");
         }
 
+        // 4. Colunas de taxa de embalagem em configuracao
+        if (!colNamesConfig.includes("delivery_taxa_embalagem")) {
+            await query("ALTER TABLE configuracao ADD COLUMN delivery_taxa_embalagem DECIMAL(10,2) DEFAULT 0.00");
+            console.log("✅ Coluna 'delivery_taxa_embalagem' adicionada na tabela 'configuracao'.");
+        } else {
+            console.log("ℹ️ Coluna 'delivery_taxa_embalagem' já existe na tabela 'configuracao'.");
+        }
+
+        if (!colNamesConfig.includes("delivery_embalagem_tipo")) {
+            await query("ALTER TABLE configuracao ADD COLUMN delivery_embalagem_tipo VARCHAR(20) DEFAULT 'pedido'");
+            console.log("✅ Coluna 'delivery_embalagem_tipo' adicionada na tabela 'configuracao'.");
+        } else {
+            console.log("ℹ️ Coluna 'delivery_embalagem_tipo' já existe na tabela 'configuracao'.");
+        }
+
         console.log("🎉 Todas as migrações foram aplicadas com sucesso no banco de dados!");
     } catch (err) {
         console.error("❌ Erro na migração:", err.message);
