@@ -41,6 +41,7 @@ db.connect(async (err) => {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 nome VARCHAR(100) NOT NULL UNIQUE,
                 icone VARCHAR(10) NOT NULL DEFAULT '🍴',
+                imagem VARCHAR(255) DEFAULT NULL,
                 ordem INT DEFAULT 0,
                 criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -54,6 +55,7 @@ db.connect(async (err) => {
                 descricao TEXT,
                 preco DECIMAL(10, 2) NOT NULL,
                 categoria VARCHAR(50) DEFAULT 'Cardápio',
+                categoria_secundaria VARCHAR(100) DEFAULT NULL,
                 happy_hour TINYINT(1) DEFAULT 0,
                 imagem VARCHAR(255) DEFAULT NULL,
                 custo DECIMAL(10, 2) DEFAULT NULL,
@@ -74,6 +76,7 @@ db.connect(async (err) => {
                 hh_dias VARCHAR(255) DEFAULT 'Segunda, Terça e Quarta',
                 hh_inicio VARCHAR(10) DEFAULT '19:00',
                 hh_fim VARCHAR(10) DEFAULT '22:00',
+                hh_apenas_local TINYINT(1) DEFAULT 1,
                 atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
         `);

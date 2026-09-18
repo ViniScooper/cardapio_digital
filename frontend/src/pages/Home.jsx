@@ -242,9 +242,17 @@ export default function Home() {
         e.preventDefault();
         if (carrinho.length === 0) return;
 
-        if (tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido) {
-            alert("Desculpe, o endereço informado está fora da nossa área de entrega.");
-            return;
+        if (tipoEntrega === "delivery") {
+            const temItensHH = carrinho.some(i => i.happy_hour);
+            const bloquearHH = config.hh_apenas_local !== 0 && config.hh_apenas_local !== false;
+            if (temItensHH && bloquearHH) {
+                alert("⚠️ Os itens de Happy Hour são exclusivos para consumo presencial no Salão/Mesa e não podem ser pedidos via Delivery.\n\nPor favor, alterne para 'No Salão / Mesa' ou remova os itens promocionais de Happy Hour do carrinho.");
+                return;
+            }
+            if (freteInfo.calculado && !freteInfo.atendido) {
+                alert("Desculpe, o endereço informado está fora da nossa área de entrega.");
+                return;
+            }
         }
 
         const telBoteco = "5581982714421"; // Telefone do Boteco do Sivirino
@@ -315,8 +323,8 @@ export default function Home() {
 
     // Lista de nomes de categorias que têm pratos normais (ordenado pelo banco)
     const nomesCategoria = categorias.length > 0
-        ? categorias.map(c => c.nome).filter(nome => pratos.some(p => p.categoria === nome && !p.happy_hour))
-        : [...new Set(pratos.filter(p => !p.happy_hour).map(p => p.categoria))];
+        ? categorias.map(c => c.nome).filter(nome => pratos.some(p => (p.categoria === nome || p.categoria_secundaria === nome) && !p.happy_hour))
+        : [...new Set(pratos.filter(p => !p.happy_hour).flatMap(p => [p.categoria, p.categoria_secundaria]).filter(Boolean))];
 
     const criarIdCategoria = (nome) => `cat-${nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 
@@ -416,15 +424,20 @@ export default function Home() {
                             <div style={styles.catNavContainer}>
                             {nomesCategoria.map((cat) => {
                                 const isAtiva = categoriaAtiva === cat;
+                                const catObj = categorias.find(c => c.nome === cat);
                                 return (
                                     <button
                                         key={cat}
                                         type="button"
                                         onClick={() => selecionarCategoria(cat)}
                                         className={`cat-nav-item ${isAtiva ? "cat-nav-item-active" : ""}`}
-                                        style={{ ...styles.catNavItem, cursor: "pointer", border: isAtiva ? "1px solid #111" : "1px solid #e0d9d0" }}
+                                        style={{ ...styles.catNavItem, cursor: "pointer", border: isAtiva ? "1px solid #111" : "1px solid #e0d9d0", display: "inline-flex", alignItems: "center", gap: "6px" }}
                                     >
-                                        <span style={{ fontSize: "1.1rem" }}>{getIconeCategoria(cat)}</span>
+                                        {catObj?.imagem ? (
+                                            <img src={getImagemUrl(catObj.imagem)} alt={cat} style={{ width: "20px", height: "20px", borderRadius: "4px", objectFit: "cover" }} />
+                                        ) : (
+                                            <span style={{ fontSize: "1.1rem" }}>{getIconeCategoria(cat)}</span>
+                                        )}
                                         <span>{cat}</span>
                                     </button>
                                 );
@@ -493,6 +506,23 @@ export default function Home() {
                                                 <p style={styles.hhSub}>
                                                     Preços e descontos exclusivos para você curtir a noite no Boteco!
                                                 </p>
+                                                {config.hh_apenas_local !== 0 && (
+                                                    <div style={{ marginTop: "0.5rem" }}>
+                                                        <span style={{
+                                                            display: "inline-block",
+                                                            background: "rgba(239, 68, 68, 0.2)",
+                                                            border: "1px solid rgba(248, 113, 113, 0.4)",
+                                                            color: "#fecaca",
+                                                            padding: "0.35rem 0.85rem",
+                                                            borderRadius: "20px",
+                                                            fontSize: "0.82rem",
+                                                            fontWeight: "700",
+                                                            letterSpacing: "0.3px"
+                                                        }}>
+                                                            🔒 Apenas no Salão / Mesa (Não disponível para Delivery)
+                                                        </span>
+                                                    </div>
+                                                )}
                                                 <div style={{ ...styles.sectionDivider, background: "linear-gradient(90deg, #f0c040, #e8b84b)" }} />
                                             </div>
                                             <div className="hh-grid" style={styles.hhGrid}>
@@ -515,7 +545,7 @@ export default function Home() {
                             }
 
                             const pratosDaCat = pratos
-                                .filter(p => p.categoria === catExibida && !p.happy_hour)
+                                .filter(p => (p.categoria === catExibida || p.categoria_secundaria === catExibida) && !p.happy_hour)
                                 .sort((a, b) => {
                                     const oA = a.ordem_manual || 0;
                                     const oB = b.ordem_manual || 0;
@@ -525,11 +555,18 @@ export default function Home() {
                                     return 0;
                                 });
 
+                            const catObj = categorias.find(c => c.nome === catExibida);
+
                             return (
                                 <section key={catExibida} id={criarIdCategoria(catExibida)} className="menu-section" style={styles.section}>
                                     <div style={styles.sectionHeader}>
                                         <p className="section-label" style={styles.sectionLabel}>{getIconeCategoria(catExibida)} {catExibida}</p>
-                                        <h2 style={styles.sectionTitle}>{catExibida}</h2>
+                                        <h2 style={{ ...styles.sectionTitle, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                                            {catObj?.imagem ? (
+                                                <img src={getImagemUrl(catObj.imagem)} alt={catExibida} style={{ width: "36px", height: "36px", borderRadius: "8px", objectFit: "cover", border: "1px solid #e0d9d0" }} />
+                                            ) : null}
+                                            <span>{catExibida}</span>
+                                        </h2>
                                         <p style={{ color: "#777", fontSize: "0.9rem", marginTop: "-0.5rem", marginBottom: "1rem" }}>
                                             {pratosDaCat.length} {pratosDaCat.length === 1 ? "opção disponível" : "opções disponíveis"}
                                         </p>
@@ -706,6 +743,60 @@ export default function Home() {
                                                     🛵 Delivery / Entrega
                                                 </button>
                                             </div>
+
+                                            {/* Alerta de bloqueio de Happy Hour no Delivery */}
+                                            {tipoEntrega === "delivery" && carrinho.some(i => i.happy_hour) && config.hh_apenas_local !== 0 && (
+                                                <div style={{
+                                                    marginTop: "0.8rem",
+                                                    background: "#fff1f2",
+                                                    border: "1px solid #fecdd3",
+                                                    borderRadius: "10px",
+                                                    padding: "0.8rem 1rem",
+                                                    fontSize: "0.82rem",
+                                                    color: "#9f1239"
+                                                }}>
+                                                    <p style={{ fontWeight: "700", margin: "0 0 0.3rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                                                        ⚠️ Happy Hour Exclusivo no Salão / Mesa!
+                                                    </p>
+                                                    <p style={{ margin: "0 0 0.6rem", lineHeight: "1.4" }}>
+                                                        Os itens promocionais de Happy Hour são válidos <b>apenas para consumo presencial no Boteco</b> e não podem ser entregues via Delivery.
+                                                    </p>
+                                                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setTipoEntrega("mesa")}
+                                                            style={{
+                                                                background: "#166534",
+                                                                color: "#fff",
+                                                                border: "none",
+                                                                borderRadius: "6px",
+                                                                padding: "0.4rem 0.75rem",
+                                                                fontSize: "0.78rem",
+                                                                fontWeight: "700",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            🍻 Mudar para No Salão / Mesa
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setCarrinho(c => c.filter(item => !item.happy_hour))}
+                                                            style={{
+                                                                background: "#fff",
+                                                                color: "#e11d48",
+                                                                border: "1px solid #fda4af",
+                                                                borderRadius: "6px",
+                                                                padding: "0.4rem 0.75rem",
+                                                                fontSize: "0.78rem",
+                                                                fontWeight: "600",
+                                                                cursor: "pointer"
+                                                            }}
+                                                        >
+                                                            🗑️ Remover itens de Happy Hour
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Nome e Mesa / Delivery */}
@@ -890,29 +981,45 @@ export default function Home() {
                                             />
                                         </div>
 
-                                        <button
-                                            type="submit"
-                                            disabled={tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido}
-                                            style={{
-                                                width: "100%",
-                                                background: (tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido) ? "#ccc" : "#25d366",
-                                                color: "#ffffff",
-                                                border: "none",
-                                                padding: "0.95rem",
-                                                borderRadius: "50px",
-                                                fontWeight: "800",
-                                                fontSize: "1.05rem",
-                                                cursor: (tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido) ? "not-allowed" : "pointer",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                gap: "8px",
-                                                boxShadow: "0 6px 20px rgba(37, 211, 102, 0.4)"
-                                            }}
-                                        >
-                                            <span>Enviar Pedido para WhatsApp</span>
-                                            <span>💬</span>
-                                        </button>
+                                        {(() => {
+                                            const bloquearHH = tipoEntrega === "delivery" && carrinho.some(i => i.happy_hour) && config.hh_apenas_local !== 0;
+                                            const bloquearFrete = tipoEntrega === "delivery" && freteInfo.calculado && !freteInfo.atendido;
+                                            const desabilitado = bloquearHH || bloquearFrete;
+
+                                            return (
+                                                <button
+                                                    type="submit"
+                                                    disabled={desabilitado}
+                                                    style={{
+                                                        width: "100%",
+                                                        background: desabilitado ? "#9ca3af" : "#25d366",
+                                                        color: "#ffffff",
+                                                        border: "none",
+                                                        padding: "0.95rem",
+                                                        borderRadius: "50px",
+                                                        fontWeight: "800",
+                                                        fontSize: "1.02rem",
+                                                        cursor: desabilitado ? "not-allowed" : "pointer",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        gap: "8px",
+                                                        boxShadow: desabilitado ? "none" : "0 6px 20px rgba(37, 211, 102, 0.4)"
+                                                    }}
+                                                >
+                                                    {bloquearHH ? (
+                                                        <span>⚠️ Remova itens de Happy Hour para pedir Delivery</span>
+                                                    ) : bloquearFrete ? (
+                                                        <span>Endereço Fora da Área de Entrega</span>
+                                                    ) : (
+                                                        <>
+                                                            <span>Enviar Pedido para WhatsApp</span>
+                                                            <span>💬</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            );
+                                        })()}
 
                                     </form>
                                 </div>

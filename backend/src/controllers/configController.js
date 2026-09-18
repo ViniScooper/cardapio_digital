@@ -25,6 +25,7 @@ const obterConfig = (req, res) => {
                 hh_dias: "Segunda, Terça e Quarta",
                 hh_inicio: "19:00",
                 hh_fim: "22:00",
+                hh_apenas_local: 1,
                 delivery_ativo: 1,
                 delivery_tempo: "40 a 60 min",
                 delivery_taxa_padrao: 8.00,
@@ -37,28 +38,30 @@ const obterConfig = (req, res) => {
 
 // PUT /config/happy-hour — admin
 const atualizarHappyHour = (req, res) => {
-    const { hh_ativo, hh_dias, hh_inicio, hh_fim } = req.body;
+    const { hh_ativo, hh_dias, hh_inicio, hh_fim, hh_apenas_local } = req.body;
 
     const ativo = (hh_ativo === true || hh_ativo === "true" || hh_ativo === 1 || hh_ativo === "1") ? 1 : 0;
     const dias = hh_dias || "Segunda, Terça e Quarta";
     const inicio = hh_inicio || "19:00";
     const fim = hh_fim || "22:00";
+    const apenasLocal = (hh_apenas_local === true || hh_apenas_local === "true" || hh_apenas_local === 1 || hh_apenas_local === "1") ? 1 : 0;
 
     const sql = `
-        INSERT INTO configuracao (id, hh_ativo, hh_dias, hh_inicio, hh_fim)
-        VALUES (1, ?, ?, ?, ?)
+        INSERT INTO configuracao (id, hh_ativo, hh_dias, hh_inicio, hh_fim, hh_apenas_local)
+        VALUES (1, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             hh_ativo = VALUES(hh_ativo),
             hh_dias = VALUES(hh_dias),
             hh_inicio = VALUES(hh_inicio),
-            hh_fim = VALUES(hh_fim)
+            hh_fim = VALUES(hh_fim),
+            hh_apenas_local = VALUES(hh_apenas_local)
     `;
 
-    db.query(sql, [ativo, dias, inicio, fim], (erro) => {
+    db.query(sql, [ativo, dias, inicio, fim, apenasLocal], (erro) => {
         if (erro) return res.status(500).json({ erro: erro.message });
         res.json({
             mensagem: "Configurações de Happy Hour atualizadas com sucesso!",
-            config: { hh_ativo: ativo, hh_dias: dias, hh_inicio: inicio, hh_fim: fim }
+            config: { hh_ativo: ativo, hh_dias: dias, hh_inicio: inicio, hh_fim: fim, hh_apenas_local: apenasLocal }
         });
     });
 };

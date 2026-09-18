@@ -34,6 +34,7 @@ const FORM_VAZIO = {
     descricao: "", 
     preco: "", 
     categoria: "", 
+    categoria_secundaria: "",
     happy_hour: false,
     custo: "",
     selo: "",
@@ -57,9 +58,12 @@ export default function Admin() {
     const [catFiltro,  setCatFiltro]  = useState("todas");
     const inputFileRef = useRef(null);
 
-    const [catNome,    setCatNome]    = useState("");
-    const [catIcone,   setCatIcone]   = useState("🍴");
-    const [enviandoCat,setEnviandoCat]= useState(false);
+    const [catNome,          setCatNome]          = useState("");
+    const [catIcone,         setCatIcone]         = useState("🍴");
+    const [catImagem,        setCatImagem]        = useState(null);
+    const [catImagemPreview, setCatImagemPreview] = useState("");
+    const [enviandoCat,      setEnviandoCat]      = useState(false);
+    const catFileInputRef                         = useRef(null);
 
     // Estados de Selos Personalizados (Flags)
     const [selos,        setSelos]        = useState([]);
@@ -73,7 +77,8 @@ export default function Admin() {
         hh_ativo: true,
         hh_dias: "Segunda, Terça e Quarta",
         hh_inicio: "19:00",
-        hh_fim: "22:00"
+        hh_fim: "22:00",
+        hh_apenas_local: true
     });
     const [salvandoHH, setSalvandoHH] = useState(false);
 
@@ -115,7 +120,8 @@ export default function Admin() {
                         hh_ativo:  !!rConfig.data.hh_ativo,
                         hh_dias:   rConfig.data.hh_dias   || "Segunda, Terça e Quarta",
                         hh_inicio: rConfig.data.hh_inicio || "19:00",
-                        hh_fim:    rConfig.data.hh_fim    || "22:00"
+                        hh_fim:    rConfig.data.hh_fim    || "22:00",
+                        hh_apenas_local: rConfig.data.hh_apenas_local !== undefined ? !!rConfig.data.hh_apenas_local : true
                     });
                     setConfigDelivery({
                         delivery_ativo: rConfig.data.delivery_ativo === undefined ? true : !!rConfig.data.delivery_ativo,
@@ -163,14 +169,15 @@ export default function Admin() {
         setAba("pratos");
         setEditandoId(prato.id);
         setForm({
-            nome:            prato.nome,
-            descricao:       prato.descricao || "",
-            preco:           prato.preco,
-            categoria:       prato.categoria || categorias[0]?.nome || "",
-            happy_hour:      !!prato.happy_hour,
-            custo:           prato.custo || "",
-            selo:            prato.selo || "",
-            destaque_manual: prato.destaque_manual || ""
+            nome:                 prato.nome,
+            descricao:            prato.descricao || "",
+            preco:                prato.preco,
+            categoria:            prato.categoria || categorias[0]?.nome || "",
+            categoria_secundaria: prato.categoria_secundaria || "",
+            happy_hour:           !!prato.happy_hour,
+            custo:                prato.custo || "",
+            selo:                 prato.selo || "",
+            destaque_manual:      prato.destaque_manual || ""
         });
         setPreview(getImagemUrl(prato.imagem));
         setImagem(null);
@@ -184,14 +191,15 @@ export default function Admin() {
         setErro(""); setMensagem(""); setEnviando(true);
         try {
             const fd = new FormData();
-            fd.append("nome",            form.nome);
-            fd.append("descricao",       form.descricao);
-            fd.append("preco",           form.preco);
-            fd.append("categoria",       form.categoria);
-            fd.append("happy_hour",      form.happy_hour ? "true" : "false");
-            fd.append("custo",           form.custo || "");
-            fd.append("selo",            form.selo || "");
-            fd.append("destaque_manual", form.destaque_manual || "");
+            fd.append("nome",                 form.nome);
+            fd.append("descricao",            form.descricao);
+            fd.append("preco",                form.preco);
+            fd.append("categoria",            form.categoria);
+            fd.append("categoria_secundaria", form.categoria_secundaria || "");
+            fd.append("happy_hour",           form.happy_hour ? "true" : "false");
+            fd.append("custo",                form.custo || "");
+            fd.append("selo",                 form.selo || "");
+            fd.append("destaque_manual",      form.destaque_manual || "");
             if (imagem) fd.append("imagem", imagem);
 
             if (editandoId) {
@@ -227,10 +235,18 @@ export default function Admin() {
         if (!catNome.trim()) return;
         setErro(""); setMensagem(""); setEnviandoCat(true);
         try {
-            await api.post("/categorias", { nome: catNome.trim(), icone: catIcone });
-            setMensagem(`Categoria "${catNome}" criada!`);
+            const fd = new FormData();
+            fd.append("nome", catNome.trim());
+            fd.append("icone", catIcone || "🍴");
+            if (catImagem) fd.append("imagem", catImagem);
+
+            await api.post("/categorias", fd, { headers: { "Content-Type": "multipart/form-data" } });
+            setMensagem(`Categoria "${catNome}" criada com sucesso!`);
             setCatNome("");
             setCatIcone("🍴");
+            setCatImagem(null);
+            setCatImagemPreview("");
+            if (catFileInputRef.current) catFileInputRef.current.value = "";
             carregarTudo();
         } catch (err) {
             setErro(err.response?.data?.erro || "Erro ao criar categoria.");
@@ -299,11 +315,15 @@ export default function Admin() {
         }
     };
 
-    const handleDeletarCategoria = async (id, nome) => {
-        if (!window.confirm(`Remover a categoria "${nome}"?`)) return;
+    const handleDeletarCategoria = async (id, nome, qtdPratos = 0) => {
+        let msg = `Remover a categoria "${nome}"?`;
+        if (qtdPratos > 0) {
+            msg = `A categoria "${nome}" possui ${qtdPratos} prato(s) vinculado(s).\n\nAo confirmá-la, a categoria será removida e os pratos serão realocados automaticamente para "Cardápio Geral" (para você não perder seus itens cadastrados).\n\nDeseja continuar?`;
+        }
+        if (!window.confirm(msg)) return;
         try {
-            await api.delete(`/categorias/${id}`);
-            setMensagem(`Categoria "${nome}" removida.`);
+            const res = await api.delete(`/categorias/${id}`);
+            setMensagem(res.data?.mensagem || `Categoria "${nome}" removida com sucesso.`);
             carregarTudo();
         } catch (err) {
             setErro(err.response?.data?.erro || "Erro ao remover categoria.");
@@ -533,13 +553,30 @@ export default function Admin() {
 
                             <div className="admin-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem" }}>
                                 <div style={styles.grupo}>
-                                    <label style={styles.label}>Categoria</label>
+                                    <label style={styles.label}>Categoria Principal *</label>
                                     <select style={{ ...styles.input, cursor: "pointer" }} value={form.categoria} onChange={(e) => setForm(f => ({ ...f, categoria: e.target.value }))}>
                                         {categorias.map(c => (
                                             <option key={c.id} value={c.nome}>{c.icone} {c.nome}</option>
                                         ))}
                                     </select>
                                 </div>
+                                <div style={styles.grupo}>
+                                    <label style={styles.label}>Categoria Secundária (Opcional)</label>
+                                    <select 
+                                        style={{ ...styles.input, cursor: "pointer" }} 
+                                        value={form.categoria_secundaria} 
+                                        onChange={(e) => setForm(f => ({ ...f, categoria_secundaria: e.target.value }))}
+                                    >
+                                        <option value="">Nenhuma (apenas na principal)</option>
+                                        {categorias.filter(c => c.nome !== form.categoria).map(c => (
+                                            <option key={c.id} value={c.nome}>{c.icone} {c.nome}</option>
+                                        ))}
+                                    </select>
+                                    <p style={{ fontSize: "0.72rem", color: "#888", marginTop: "0.2rem" }}>
+                                        💡 O prato aparecerá em ambas no cardápio (ex: Refeição Completa + Especialidade da Casa).
+                                    </p>
+                                </div>
+                            </div>
                                 <div style={styles.grupo}>
                                     <label style={styles.label}>Selo / Flag Promocional</label>
                                     <select 
@@ -584,7 +621,6 @@ export default function Admin() {
                                         )}
                                     </div>
                                 </div>
-                            </div>
 
 
                             {/* Toggle Happy Hour */}
@@ -689,6 +725,11 @@ export default function Admin() {
                                                     <span style={styles.badgeCat}>
                                                         {categorias.find(c => c.nome === prato.categoria)?.icone || "🍴"} {prato.categoria}
                                                     </span>
+                                                    {prato.categoria_secundaria && (
+                                                        <span style={{ ...styles.badgeCat, background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a" }}>
+                                                            ⭐ {prato.categoria_secundaria}
+                                                        </span>
+                                                    )}
                                                     {prato.happy_hour ? <span style={styles.badgeHH}>🍺 HH</span> : null}
                                                 </div>
                                             </div>
@@ -782,12 +823,59 @@ export default function Admin() {
                                 </div>
                             </div>
 
+                            {/* Upload de Foto da Categoria */}
+                            <div style={styles.grupo}>
+                                <label style={styles.label}>📸 Foto / Imagem da Categoria (Opcional)</label>
+                                <p style={{ fontSize: "0.76rem", color: "#888", margin: "0 0 0.4rem" }}>
+                                    Não encontrou o ícone que queria? Escolha uma foto do seu prato ou tema para representar esta categoria!
+                                </p>
+                                <input
+                                    ref={catFileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    style={styles.input}
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setCatImagem(file);
+                                            setCatImagemPreview(URL.createObjectURL(file));
+                                        } else {
+                                            setCatImagem(null);
+                                            setCatImagemPreview("");
+                                        }
+                                    }}
+                                />
+                                {catImagemPreview && (
+                                    <div style={{ marginTop: "0.6rem", display: "flex", alignItems: "center", gap: "12px", background: "#fdfbf7", padding: "0.6rem 0.8rem", borderRadius: "8px", border: "1px solid #e0d9d0" }}>
+                                        <img src={catImagemPreview} alt="Prévia da Foto" style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "8px", border: "1px solid #d4c8b8" }} />
+                                        <div>
+                                            <span style={{ fontSize: "0.8rem", fontWeight: "700", color: "#111", display: "block" }}>Foto da Categoria Selecionada</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setCatImagem(null);
+                                                    setCatImagemPreview("");
+                                                    if (catFileInputRef.current) catFileInputRef.current.value = "";
+                                                }}
+                                                style={{ fontSize: "0.75rem", color: "#c0392b", background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline", marginTop: "2px" }}
+                                            >
+                                                Remover foto
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Preview */}
                             {catNome && (
                                 <div style={styles.previewCard}>
                                     <p style={styles.previewLabel}>Como vai aparecer no cardápio</p>
                                     <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-                                        <span style={{ fontSize: "2rem" }}>{catIcone}</span>
+                                        {catImagemPreview ? (
+                                            <img src={catImagemPreview} alt={catNome} style={{ width: "42px", height: "42px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e8b84b" }} />
+                                        ) : (
+                                            <span style={{ fontSize: "2rem" }}>{catIcone}</span>
+                                        )}
                                         <div>
                                             <p style={{ fontSize: "0.7rem", color: "#e8b84b", letterSpacing: "3px", textTransform: "uppercase", fontWeight: "600" }}>{catIcone} {catNome}</p>
                                             <p style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.3rem", fontWeight: "700", color: "#1a1a1a" }}>{catNome}</p>
@@ -821,7 +909,7 @@ export default function Admin() {
 
                         <div style={styles.lista}>
                             {categorias.map((cat, index) => {
-                                const qtd = pratos.filter(p => p.categoria === cat.nome).length;
+                                const qtd = pratos.filter(p => p.categoria === cat.nome || p.categoria_secundaria === cat.nome).length;
                                 return (
                                     <div key={cat.id} className="admin-cat-item" style={{ ...styles.catItem, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.8rem" }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
@@ -839,7 +927,11 @@ export default function Admin() {
                                             }}>
                                                 {index + 1}
                                             </span>
-                                            <div style={styles.catIconeBox}>{cat.icone}</div>
+                                            {cat.imagem ? (
+                                                <img src={getImagemUrl(cat.imagem)} alt={cat.nome} style={{ width: "38px", height: "38px", borderRadius: "8px", objectFit: "cover", border: "1px solid #e0d9d0" }} />
+                                            ) : (
+                                                <div style={styles.catIconeBox}>{cat.icone}</div>
+                                            )}
                                             <div style={styles.itemInfo}>
                                                 <p style={{ ...styles.itemNome, margin: 0 }}>{cat.nome}</p>
                                                 <p style={{ fontSize: "0.75rem", color: "#aaa", margin: "0.1rem 0 0" }}>
@@ -892,9 +984,9 @@ export default function Admin() {
                                             {/* Botão Remover */}
                                             <button
                                                 className="admin-btn-action"
-                                                style={{ ...styles.btnDel, ...(qtd > 0 ? { opacity: 0.4, cursor: "not-allowed" } : {}) }}
-                                                onClick={() => qtd === 0 && handleDeletarCategoria(cat.id, cat.nome)}
-                                                title={qtd > 0 ? `${qtd} prato(s) usam esta categoria` : "Remover categoria"}
+                                                style={styles.btnDel}
+                                                onClick={() => handleDeletarCategoria(cat.id, cat.nome, qtd)}
+                                                title={qtd > 0 ? `Excluir categoria (${qtd} prato(s) serão movidos para Cardápio Geral)` : "Remover categoria"}
                                             >
                                                 🗑️
                                             </button>
@@ -1075,6 +1167,24 @@ export default function Admin() {
                                     </p>
                                     <p style={styles.hhToggleSub}>
                                         {configHH.hh_ativo ? "A seção e o banner especial aparecerão para os clientes." : "A seção ficará oculta do cardápio público."}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Toggle Exclusivo Salão / Travar no Delivery */}
+                            <div
+                                style={{ ...styles.hhToggle, marginTop: "0.5rem" }}
+                                onClick={() => setConfigHH(c => ({ ...c, hh_apenas_local: !c.hh_apenas_local }))}
+                            >
+                                <div style={{ ...styles.hhToggleBox, ...(configHH.hh_apenas_local ? styles.hhToggleAtivo : {}) }}>
+                                    <div style={{ ...styles.hhToggleCircle, ...(configHH.hh_apenas_local ? styles.hhToggleCircleAtivo : {}) }} />
+                                </div>
+                                <div>
+                                    <p style={styles.hhToggleLabel}>
+                                        {configHH.hh_apenas_local ? "🔒 Exclusivo no Salão / Mesa (Bloqueado no Delivery)" : "🛵 Liberado para Entrega via Delivery"}
+                                    </p>
+                                    <p style={styles.hhToggleSub}>
+                                        {configHH.hh_apenas_local ? "Clientes só podem pedir Happy Hour no local. O sistema bloqueia pedidos de Happy Hour com entrega." : "Clientes podem pedir itens promocionais de Happy Hour tanto na mesa quanto por Delivery."}
                                     </p>
                                 </div>
                             </div>
