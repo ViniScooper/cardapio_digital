@@ -37,7 +37,8 @@ export default function Home() {
         hh_ativo: 1,
         hh_dias: "Segunda, Terça e Quarta",
         hh_inicio: "19:00",
-        hh_fim: "22:00"
+        hh_fim: "22:00",
+        instagram_url: "https://www.instagram.com/botecodosivirino/"
     });
     const [loading,       setLoading]       = useState(true);
     const [erro,          setErro]          = useState("");
@@ -399,10 +400,16 @@ export default function Home() {
                             <span style={styles.infoText}>(81) 98271-4421</span>
                         </div>
                         <div className="hero-info-sep" style={styles.infoSep} />
-                        <div style={styles.infoItem}>
+                        <a
+                            href={config?.instagram_url || "https://www.instagram.com/botecodosivirino/"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ ...styles.infoItem, textDecoration: "none", cursor: "pointer" }}
+                            title="Siga o Boteco do Sivirino no Instagram"
+                        >
                             <span>📸</span>
-                            <span style={styles.infoText}>@BOTECODO_SIVIRINO</span>
-                        </div>
+                            <span style={{ ...styles.infoText, textDecoration: "underline" }}>@BOTECODO_SIVIRINO</span>
+                        </a>
                     </div>
                     <div className="hero-btns" style={styles.heroBtns}>
                         <a href="#cardapio" className="hero-btn" style={styles.heroBtn}>Ver Cardápio</a>
@@ -1191,7 +1198,15 @@ export default function Home() {
                     <span className="footer-sep" style={{ color: "#333" }}>|</span>
                     <span>📱 WhatsApp: (81) 98271-4421</span>
                     <span className="footer-sep" style={{ color: "#333" }}>|</span>
-                    <span>📸 @BOTECODO_SIVIRINO</span>
+                    <a
+                        href={config?.instagram_url || "https://www.instagram.com/botecodosivirino/"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: "underline", color: "inherit", cursor: "pointer" }}
+                        title="Ver no Instagram"
+                    >
+                        📸 @BOTECODO_SIVIRINO
+                    </a>
                     <span className="footer-sep" style={{ color: "#333" }}>|</span>
                     <span>🛵 Disponível no iFood</span>
                 </div>

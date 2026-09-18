@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS configuracao (
     hh_apenas_local TINYINT(1) DEFAULT 1,
     delivery_taxa_embalagem DECIMAL(10,2) DEFAULT 0.00,
     delivery_embalagem_tipo VARCHAR(20) DEFAULT 'pedido',
+    instagram_url VARCHAR(255) DEFAULT 'https://www.instagram.com/botecodosivirino/',
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 

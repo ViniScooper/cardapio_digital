@@ -101,6 +101,10 @@ export default function Admin() {
     const [salvandoBairro, setSalvandoBairro]     = useState(false);
     const [buscaBairroAdmin, setBuscaBairroAdmin] = useState("");
 
+    // Configuração do Instagram / Redes Sociais
+    const [instagramUrl, setInstagramUrl]         = useState("https://www.instagram.com/botecodosivirino/");
+    const [salvandoRedes, setSalvandoRedes]       = useState(false);
+
     const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
 
     const carregarTudo = useCallback(() => {
@@ -137,6 +141,9 @@ export default function Admin() {
                         delivery_taxa_embalagem: rConfig.data.delivery_taxa_embalagem !== undefined ? String(rConfig.data.delivery_taxa_embalagem) : "0.00",
                         delivery_embalagem_tipo: rConfig.data.delivery_embalagem_tipo || "pedido"
                     });
+                    if (rConfig.data.instagram_url) {
+                        setInstagramUrl(rConfig.data.instagram_url);
+                    }
                 }
                 if (!form.categoria && rCats.data.length > 0) {
                     setForm(f => ({ ...f, categoria: rCats.data[0].nome }));
@@ -420,6 +427,22 @@ export default function Admin() {
         }
     };
 
+    const handleSalvarRedes = async (e) => {
+        e.preventDefault();
+        setErro("");
+        setMensagem("");
+        setSalvandoRedes(true);
+        try {
+            await api.put("/config/geral", { instagram_url: instagramUrl });
+            setMensagem("Link do Instagram atualizado com sucesso!");
+            carregarTudo();
+        } catch (err) {
+            setErro(err.response?.data?.erro || "Erro ao salvar link do Instagram.");
+        } finally {
+            setSalvandoRedes(false);
+        }
+    };
+
     // Pratos filtrados e ordenados de forma idêntica ao cardápio
     const pratosFiltrados = pratos
         .filter(p => {
@@ -503,6 +526,7 @@ export default function Admin() {
                     <button onClick={() => setAba("categorias")} className="admin-aba" style={{ ...styles.aba, ...(aba === "categorias" ? styles.abaAtiva : {}) }}>📂 Categorias</button>
                     <button onClick={() => setAba("happyhour")}  className="admin-aba" style={{ ...styles.aba, ...(aba === "happyhour"  ? styles.abaAtiva : {}) }}>⚡ Happy Hour</button>
                     <button onClick={() => setAba("delivery")}   className="admin-aba" style={{ ...styles.aba, ...(aba === "delivery"   ? styles.abaAtiva : {}) }}>🛵 Delivery / Frete</button>
+                    <button onClick={() => setAba("redes")}      className="admin-aba" style={{ ...styles.aba, ...(aba === "redes"      ? styles.abaAtiva : {}) }}>📸 Instagram & Redes</button>
                     <button onClick={() => setAba("qrcode")}     className="admin-aba" style={{ ...styles.aba, ...(aba === "qrcode"     ? styles.abaAtiva : {}) }}>📱 QR Code</button>
                 </div>
             </div>
@@ -1628,6 +1652,122 @@ export default function Admin() {
                                 🖨️ Imprimir QR Code
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── ABA REDES SOCIAIS & INSTAGRAM ── */}
+            {aba === "redes" && (
+                <div className="admin-body" style={{ ...styles.body, gridTemplateColumns: "1fr", maxWidth: "800px" }}>
+                    <div className="admin-card" style={styles.card}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", marginBottom: "1.2rem", paddingBottom: "0.8rem", borderBottom: "2px solid #f0ebe3" }}>
+                            <div style={{
+                                width: "46px",
+                                height: "46px",
+                                borderRadius: "12px",
+                                background: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#fff",
+                                fontSize: "1.4rem",
+                                boxShadow: "0 4px 12px rgba(220, 39, 67, 0.3)"
+                            }}>
+                                📸
+                            </div>
+                            <div>
+                                <h2 className="admin-card-titulo" style={{ ...styles.cardTitulo, margin: 0, borderBottom: "none", paddingBottom: 0 }}>
+                                    Instagram Oficial & Redes Sociais
+                                </h2>
+                                <p style={{ margin: 0, fontSize: "0.82rem", color: "#666" }}>
+                                    Configure o link do perfil que os clientes clicam para seguir o Boteco no Instagram.
+                                </p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSalvarRedes} style={styles.form}>
+                            <div style={styles.grupo}>
+                                <label style={{ ...styles.label, fontWeight: "700" }}>Link do Perfil no Instagram *</label>
+                                <div style={{ display: "flex", gap: "0.5rem" }}>
+                                    <input
+                                        type="url"
+                                        required
+                                        placeholder="https://www.instagram.com/botecodosivirino/"
+                                        value={instagramUrl}
+                                        onChange={(e) => setInstagramUrl(e.target.value)}
+                                        style={{ ...styles.input, flex: 1, fontWeight: "600" }}
+                                    />
+                                    {instagramUrl && (
+                                        <a
+                                            href={instagramUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                padding: "0 1.2rem",
+                                                borderRadius: "10px",
+                                                background: "#f7f3ed",
+                                                border: "1px solid #e0d9d0",
+                                                color: "#b45309",
+                                                fontWeight: "700",
+                                                fontSize: "0.85rem",
+                                                textDecoration: "none",
+                                                whiteSpace: "nowrap"
+                                            }}
+                                            title="Abrir no navegador para testar"
+                                        >
+                                            Testar Link ↗
+                                        </a>
+                                    )}
+                                </div>
+                                <span style={{ fontSize: "0.72rem", color: "#888", marginTop: "0.2rem" }}>
+                                    Ex: https://www.instagram.com/botecodosivirino/
+                                </span>
+                            </div>
+
+                            {/* Pré-visualização do Botão */}
+                            <div style={{ background: "#111", borderRadius: "12px", padding: "1.2rem", color: "#fff", marginTop: "0.5rem", marginBottom: "0.8rem" }}>
+                                <p style={{ margin: "0 0 0.8rem", fontSize: "0.75rem", color: "#e8b84b", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px" }}>
+                                    Como os clientes verão no cardápio público:
+                                </p>
+                                <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+                                    <a
+                                        href={instagramUrl || "#"}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                            background: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+                                            color: "#ffffff",
+                                            padding: "0.5rem 1.1rem",
+                                            borderRadius: "50px",
+                                            fontSize: "0.85rem",
+                                            fontWeight: "700",
+                                            textDecoration: "none",
+                                            boxShadow: "0 4px 15px rgba(220, 39, 67, 0.4)"
+                                        }}
+                                    >
+                                        <span>📸</span>
+                                        <span>@botecodosivirino</span>
+                                        <span style={{ fontSize: "0.75rem", opacity: 0.9 }}>↗</span>
+                                    </a>
+                                    <span style={{ fontSize: "0.8rem", color: "#aaa" }}>
+                                        Disponível no topo e no rodapé do cardápio digital
+                                    </span>
+                                </div>
+                            </div>
+
+                            {erro && <div style={styles.alertaErro}>⚠️ {erro}</div>}
+                            {mensagem && <div style={styles.alertaSucesso}>✅ {mensagem}</div>}
+
+                            <button style={styles.btnAdicionar} type="submit" disabled={salvandoRedes}>
+                                {salvandoRedes ? "Salvando..." : "💾 Salvar Link do Instagram"}
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}

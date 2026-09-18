@@ -13,13 +13,17 @@ const {
     listarTodosBairrosAdmin,
     salvarBairroDelivery,
     excluirBairroDelivery,
-    calcularFreteDelivery
+    calcularFreteDelivery,
+    atualizarConfigGeral
 } = require("../controllers/configController");
 
 const { verificarToken, apenasAdmin } = require("../middleware/authMiddleware");
 
 // GET /config — público
 router.get("/", obterConfig);
+
+// PUT /config/geral — dados do restaurante / redes sociais (apenas admin)
+router.put("/geral", verificarToken, apenasAdmin, atualizarConfigGeral);
 
 // PUT /config/happy-hour — apenas admin
 router.put("/happy-hour", verificarToken, apenasAdmin, atualizarHappyHour);

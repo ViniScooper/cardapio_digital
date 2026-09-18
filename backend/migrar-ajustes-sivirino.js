@@ -67,6 +67,14 @@ async function migrar() {
             console.log("ℹ️ Coluna 'delivery_embalagem_tipo' já existe na tabela 'configuracao'.");
         }
 
+        // 5. Coluna instagram_url em configuracao
+        if (!colNamesConfig.includes("instagram_url")) {
+            await query("ALTER TABLE configuracao ADD COLUMN instagram_url VARCHAR(255) DEFAULT 'https://www.instagram.com/botecodosivirino/'");
+            console.log("✅ Coluna 'instagram_url' adicionada na tabela 'configuracao'.");
+        } else {
+            console.log("ℹ️ Coluna 'instagram_url' já existe na tabela 'configuracao'.");
+        }
+
         console.log("🎉 Todas as migrações foram aplicadas com sucesso no banco de dados!");
     } catch (err) {
         console.error("❌ Erro na migração:", err.message);

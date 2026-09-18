@@ -31,7 +31,8 @@ const obterConfig = (req, res) => {
                 delivery_taxa_padrao: 8.00,
                 delivery_pedido_minimo: 0.00,
                 delivery_taxa_embalagem: 0.00,
-                delivery_embalagem_tipo: "pedido"
+                delivery_embalagem_tipo: "pedido",
+                instagram_url: "https://www.instagram.com/botecodosivirino/"
             });
         }
         res.json(resultado[0]);
@@ -296,6 +297,27 @@ const calcularFreteDelivery = (req, res) => {
     });
 };
 
+// PUT /config/geral — admin (Instagram, dados da empresa)
+const atualizarConfigGeral = (req, res) => {
+    const { instagram_url } = req.body;
+    const url = (instagram_url || "").trim() || "https://www.instagram.com/botecodosivirino/";
+
+    const sql = `
+        INSERT INTO configuracao (id, instagram_url)
+        VALUES (1, ?)
+        ON DUPLICATE KEY UPDATE
+            instagram_url = VALUES(instagram_url)
+    `;
+
+    db.query(sql, [url], (erro) => {
+        if (erro) return res.status(500).json({ erro: erro.message });
+        res.json({
+            mensagem: "Configurações gerais atualizadas com sucesso!",
+            config: { instagram_url: url }
+        });
+    });
+};
+
 module.exports = {
     obterConfig,
     atualizarHappyHour,
@@ -304,5 +326,6 @@ module.exports = {
     listarTodosBairrosAdmin,
     salvarBairroDelivery,
     excluirBairroDelivery,
-    calcularFreteDelivery
+    calcularFreteDelivery,
+    atualizarConfigGeral
 };
