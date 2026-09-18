@@ -35,4 +35,35 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Interceptor de Erros: Envia telemetria automaticamente para a central de logs do CloudOps Hub
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        try {
+            const status = error.response ? error.response.status : 0;
+            const endpoint = error.config ? error.config.url : "";
+            const method = error.config ? error.config.method : "GET";
+            const msg = error.response?.data?.erro || error.message || "Erro desconhecido";
+
+            // Envia para o CloudOps Hub em background (não bloqueia a UI do cliente)
+            fetch("http://localhost:3005/api/telemetry/log", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    source: window.location.pathname.includes("/admin") ? "Painel Admin" : "Cardápio Digital",
+                    level: status >= 500 || status === 0 ? "ERROR" : "WARN",
+                    message: `Falha na requisição [HTTP ${status}]: ${msg}`,
+                    path: endpoint,
+                    method: method.toUpperCase(),
+                    statusCode: status,
+                    details: error.response?.data || error.stack || null,
+                    userAgent: navigator.userAgent
+                })
+            }).catch(() => {});
+        } catch (e) {}
+
+        return Promise.reject(error);
+    }
+);
+
 export default api;
