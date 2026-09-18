@@ -333,9 +333,9 @@ export default function Home() {
     // Separa happy hour dos outros e agrupa por categoria
     const happyHourPratos = pratos.filter(p => p.happy_hour);
 
-    // Lista de nomes de categorias que têm pratos normais (ordenado pelo banco)
+    // Lista de nomes de categorias (ordenado pelo banco de dados)
     const nomesCategoria = categorias.length > 0
-        ? categorias.map(c => c.nome).filter(nome => pratos.some(p => (p.categoria === nome || p.categoria_secundaria === nome) && !p.happy_hour))
+        ? categorias.map(c => c.nome)
         : [...new Set(pratos.filter(p => !p.happy_hour).flatMap(p => [p.categoria, p.categoria_secundaria]).filter(Boolean))];
 
     const criarIdCategoria = (nome) => `cat-${nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
@@ -592,9 +592,10 @@ export default function Home() {
                                     </div>
                                     
                                     {pratosDaCat.length === 0 ? (
-                                        <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#888" }}>
-                                            <p style={{ fontSize: "2rem" }}>🍽️</p>
-                                            <p>Nenhum prato disponível nesta categoria no momento.</p>
+                                        <div style={{ textAlign: "center", padding: "3rem 1.5rem", background: "#faf8f5", borderRadius: "16px", border: "1px dashed #d8cfc4", maxWidth: "500px", margin: "1rem auto" }}>
+                                            <p style={{ fontSize: "2.5rem", margin: "0 0 0.5rem" }}>{catObj?.imagem ? "📸" : getIconeCategoria(catExibida)}</p>
+                                            <p style={{ fontWeight: "700", color: "#333", fontSize: "1.05rem", margin: "0 0 0.4rem" }}>{catExibida}</p>
+                                            <p style={{ color: "#777", fontSize: "0.88rem", margin: 0 }}>Em breve novos pratos e novidades irresistíveis cadastrados nesta seção!</p>
                                         </div>
                                     ) : (
                                         <div className="menu-grid" style={styles.grid}>

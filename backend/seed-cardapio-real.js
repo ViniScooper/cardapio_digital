@@ -9,7 +9,8 @@ const db = mysql.createConnection({
     user:     process.env.DB_USER     || "root",
     password: process.env.DB_PASSWORD || "viniZIKA3103",
     database: process.env.DB_NAME     || "restaurante",
-    port:     Number(process.env.DB_PORT) || 3306
+    port:     Number(process.env.DB_PORT) || 3306,
+    charset:  "utf8mb4"
 });
 
 db.connect(async (err) => {
@@ -23,10 +24,18 @@ db.connect(async (err) => {
         new Promise((res, rej) => db.query(sql, params, (e, r) => e ? rej(e) : res(r)));
 
     try {
-        // 1. Limpa pratos e categorias antigas
-        await query("DELETE FROM prato");
-        await query("DELETE FROM categoria");
-        console.log("🧹 Pratos e categorias anteriores limpos.");
+        const rowsPratos = await query("SELECT COUNT(*) as total FROM prato");
+        const rowsCats = await query("SELECT COUNT(*) as total FROM categoria");
+        const totalPratos = rowsPratos[0]?.total || 0;
+        const totalCats = rowsCats[0]?.total || 0;
+
+        if (totalPratos > 0 || totalCats > 0) {
+            console.log(`ℹ️ [Seed] Banco já contém ${totalCats} categorias e ${totalPratos} pratos. Dados preservados! Pulando seed.`);
+            db.end();
+            return;
+        }
+
+        console.log("🌱 [Seed] Banco vazio detectado. Criando categorias e cardápio inicial...");
 
         // 2. Cria as categorias na ordem correta
         const categorias = [
