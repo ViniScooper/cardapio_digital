@@ -30,6 +30,24 @@ const getEmoji = (nome) => {
     return "🍴";
 };
 
+const InstagramIcon = ({ size = 16, color = "currentColor", style = {} }) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ display: "inline-block", verticalAlign: "middle", flexShrink: 0, ...style }}
+    >
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+);
+
 export default function Home() {
     const [pratos,     setPratos]     = useState([]);
     const [categorias, setCategorias] = useState([]);
@@ -404,11 +422,11 @@ export default function Home() {
                             href={config?.instagram_url || "https://www.instagram.com/botecodosivirino/"}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ ...styles.infoItem, textDecoration: "none", cursor: "pointer" }}
+                            style={{ ...styles.infoItem, textDecoration: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
                             title="Siga o Boteco do Sivirino no Instagram"
                         >
-                            <span>📸</span>
-                            <span style={{ ...styles.infoText, textDecoration: "underline" }}>@BOTECODO_SIVIRINO</span>
+                            <InstagramIcon size={16} color="#E1306C" />
+                            <span style={{ ...styles.infoText, textDecoration: "underline" }}>@botecodosivirino</span>
                         </a>
                     </div>
                     <div className="hero-btns" style={styles.heroBtns}>
@@ -1203,10 +1221,11 @@ export default function Home() {
                         href={config?.instagram_url || "https://www.instagram.com/botecodosivirino/"}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ textDecoration: "underline", color: "inherit", cursor: "pointer" }}
+                        style={{ textDecoration: "underline", color: "inherit", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px" }}
                         title="Ver no Instagram"
                     >
-                        📸 @BOTECODO_SIVIRINO
+                        <InstagramIcon size={14} color="#E1306C" />
+                        <span>@botecodosivirino</span>
                     </a>
                     <span className="footer-sep" style={{ color: "#333" }}>|</span>
                     <span>🛵 Disponível no iFood</span>
