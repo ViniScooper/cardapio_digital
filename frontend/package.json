@@ -1,6 +1,6 @@
 {
   "name": "restaurante-frontend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Frontend React do restaurante",
   "scripts": {
     "dev": "vite",
